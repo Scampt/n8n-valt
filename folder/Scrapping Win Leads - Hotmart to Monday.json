@@ -1,0 +1,624 @@
+{
+  "active": true,
+  "activeVersion": {
+    "updatedAt": "2025-12-15T18:56:33.000Z",
+    "createdAt": "2025-12-15T18:56:31.944Z",
+    "versionId": "5583e716-fad9-44d0-936c-1800c0cc45d3",
+    "workflowId": "lv1DW9O5DCGSlIab",
+    "nodes": [
+      {
+        "parameters": {
+          "resource": "boardItem",
+          "operation": "getAll",
+          "boardId": "18379463302",
+          "groupId": "topics",
+          "returnAll": true
+        },
+        "type": "n8n-nodes-base.mondayCom",
+        "typeVersion": 1,
+        "position": [
+          -912,
+          128
+        ],
+        "id": "2c01d24b-b2cd-4f32-a0c5-0529c1c5b20e",
+        "name": "Obtener opens",
+        "credentials": {
+          "mondayComApi": {
+            "id": "jq04ZaznQx8nOr7b",
+            "name": "Monday.com - Valtmx account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "hotmart-inbound",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -1312,
+          128
+        ],
+        "id": "0413415a-52a3-4557-800f-562bf1fc176c",
+        "name": "Webhook",
+        "webhookId": "fc28d1cf-4eb0-4082-ab0e-8a6efecb3d73"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "eabefab3-1aa8-44a7-897c-ad8a43419d85",
+                "name": "Nombre",
+                "value": "={{ $json.name }}",
+                "type": "string"
+              },
+              {
+                "id": "ef4e9c64-868c-4101-90f6-c536f284b8fa",
+                "name": "Email",
+                "value": "={{ $json.column_values[0].text }}",
+                "type": "string"
+              },
+              {
+                "id": "5a582879-2370-4825-b2d0-ef0f67390752",
+                "name": "Phone",
+                "value": "={{ $json.column_values[1].text }}",
+                "type": "string"
+              },
+              {
+                "id": "6ad9363d-d401-4f71-872c-df4f514af09e",
+                "name": "Estado",
+                "value": "={{ $json.column_values[2].text }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          -704,
+          128
+        ],
+        "id": "812d045a-f607-4e45-a29a-cf704a9f026b",
+        "name": "Datos Monday"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "e639cc07-a220-4757-ade1-03196692fade",
+                "name": "Product Name",
+                "value": "={{ $json.body.data.product.name }}",
+                "type": "string"
+              },
+              {
+                "id": "fe826a96-0820-410e-aa14-8b76873dd389",
+                "name": "Name",
+                "value": "={{ $json.body.data.buyer.name }}",
+                "type": "string"
+              },
+              {
+                "id": "87e08e68-0ec0-4175-8626-e5f1b14f62d5",
+                "name": "Last Name",
+                "value": "={{ $json.body.data.buyer.last_name }}",
+                "type": "string"
+              },
+              {
+                "id": "68f31c54-bb4f-4079-ab24-30fa09eaebb3",
+                "name": "Email",
+                "value": "={{ $json.body.data.buyer.email }}",
+                "type": "string"
+              },
+              {
+                "id": "41c2d060-ed17-4146-b119-5538d5027935",
+                "name": "Country ISO",
+                "value": "={{ $json.body.data.buyer.address.country_iso }}",
+                "type": "string"
+              },
+              {
+                "id": "55febf1e-7b64-4a98-a19b-003704ccd1c1",
+                "name": "Phone",
+                "value": "={{ $json.body.data.buyer.checkout_phone }}",
+                "type": "string"
+              },
+              {
+                "id": "5781dd3e-4ab4-4ba9-8162-c6ae24381b89",
+                "name": "Transaction",
+                "value": "={{ $json.body.data.purchase.transaction }}",
+                "type": "string"
+              },
+              {
+                "id": "22c21b19-8a96-4ae5-a413-4a51ed1fdabe",
+                "name": "Transaction Status",
+                "value": "={{ $json.body.data.purchase.status }}",
+                "type": "string"
+              },
+              {
+                "id": "5a269f6c-1e64-4133-b805-55c598aad4d0",
+                "name": "Event",
+                "value": "={{ $json.body.event }}",
+                "type": "string"
+              },
+              {
+                "id": "d594578d-167f-4255-9e47-1cf28ff111a9",
+                "name": "Correo de prueba",
+                "value": "kevinquiroz@valtmx.com",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          -1104,
+          128
+        ],
+        "id": "5ef986ff-f350-4759-a59b-a924b4287d50",
+        "name": "Datos Hotmart"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c66ee2da-68b8-467f-834a-611d41e6da5c",
+                "leftValue": "={{ $json.Email === $('Datos Hotmart').item.json.Email }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          -480,
+          128
+        ],
+        "id": "cc379398-2eb8-48ad-86c9-bc7e63811a7a",
+        "name": "Email ya existe en Monday?"
+      },
+      {
+        "parameters": {
+          "resource": "boardItem",
+          "operation": "changeColumnValue",
+          "boardId": "18379463302",
+          "itemId": "={{ $('Obtener opens').item.json.id }}",
+          "columnId": "color_mkxxcy0g",
+          "value": "={{ JSON.stringify({ label: \"Ganado\" }) }}"
+        },
+        "type": "n8n-nodes-base.mondayCom",
+        "typeVersion": 1,
+        "position": [
+          -128,
+          0
+        ],
+        "id": "ff975620-a4f0-4774-8090-b0b5f1eff957",
+        "name": "Cambiar estado a Ganado",
+        "alwaysOutputData": true,
+        "credentials": {
+          "mondayComApi": {
+            "id": "jq04ZaznQx8nOr7b",
+            "name": "Monday.com - Valtmx account"
+          }
+        }
+      },
+      {
+        "parameters": {},
+        "type": "n8n-nodes-base.noOp",
+        "typeVersion": 1,
+        "position": [
+          -128,
+          240
+        ],
+        "id": "a269d070-a118-4c5c-accc-7bbaab0f993e",
+        "name": "No hacer nada"
+      }
+    ],
+    "connections": {
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "Datos Hotmart",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Obtener opens": {
+        "main": [
+          [
+            {
+              "node": "Datos Monday",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Datos Monday": {
+        "main": [
+          [
+            {
+              "node": "Email ya existe en Monday?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Datos Hotmart": {
+        "main": [
+          [
+            {
+              "node": "Obtener opens",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Email ya existe en Monday?": {
+        "main": [
+          [
+            {
+              "node": "Cambiar estado a Ganado",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "No hacer nada",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Kevin Quiroz",
+    "name": "Version 5583e716",
+    "description": ""
+  },
+  "activeVersionId": "5583e716-fad9-44d0-936c-1800c0cc45d3",
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Datos Hotmart",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener opens": {
+      "main": [
+        [
+          {
+            "node": "Datos Monday",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Datos Monday": {
+      "main": [
+        [
+          {
+            "node": "Email ya existe en Monday?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Datos Hotmart": {
+      "main": [
+        [
+          {
+            "node": "Obtener opens",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email ya existe en Monday?": {
+      "main": [
+        [
+          {
+            "node": "Cambiar estado a Ganado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No hacer nada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-12-15T18:16:53.567Z",
+  "id": "lv1DW9O5DCGSlIab",
+  "isArchived": false,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "name": "Scrapping Win Leads - Hotmart to Monday",
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "boardItem",
+        "operation": "getAll",
+        "boardId": "18379463302",
+        "groupId": "topics",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.mondayCom",
+      "typeVersion": 1,
+      "position": [
+        -912,
+        128
+      ],
+      "id": "2c01d24b-b2cd-4f32-a0c5-0529c1c5b20e",
+      "name": "Obtener opens",
+      "credentials": {
+        "mondayComApi": {
+          "id": "jq04ZaznQx8nOr7b",
+          "name": "Monday.com - Valtmx account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "hotmart-inbound",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1312,
+        128
+      ],
+      "id": "0413415a-52a3-4557-800f-562bf1fc176c",
+      "name": "Webhook",
+      "webhookId": "fc28d1cf-4eb0-4082-ab0e-8a6efecb3d73"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "eabefab3-1aa8-44a7-897c-ad8a43419d85",
+              "name": "Nombre",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "ef4e9c64-868c-4101-90f6-c536f284b8fa",
+              "name": "Email",
+              "value": "={{ $json.column_values[0].text }}",
+              "type": "string"
+            },
+            {
+              "id": "5a582879-2370-4825-b2d0-ef0f67390752",
+              "name": "Phone",
+              "value": "={{ $json.column_values[1].text }}",
+              "type": "string"
+            },
+            {
+              "id": "6ad9363d-d401-4f71-872c-df4f514af09e",
+              "name": "Estado",
+              "value": "={{ $json.column_values[2].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -704,
+        128
+      ],
+      "id": "812d045a-f607-4e45-a29a-cf704a9f026b",
+      "name": "Datos Monday"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e639cc07-a220-4757-ade1-03196692fade",
+              "name": "Product Name",
+              "value": "={{ $json.body.data.product.name }}",
+              "type": "string"
+            },
+            {
+              "id": "fe826a96-0820-410e-aa14-8b76873dd389",
+              "name": "Name",
+              "value": "={{ $json.body.data.buyer.name }}",
+              "type": "string"
+            },
+            {
+              "id": "87e08e68-0ec0-4175-8626-e5f1b14f62d5",
+              "name": "Last Name",
+              "value": "={{ $json.body.data.buyer.last_name }}",
+              "type": "string"
+            },
+            {
+              "id": "68f31c54-bb4f-4079-ab24-30fa09eaebb3",
+              "name": "Email",
+              "value": "={{ $json.body.data.buyer.email }}",
+              "type": "string"
+            },
+            {
+              "id": "41c2d060-ed17-4146-b119-5538d5027935",
+              "name": "Country ISO",
+              "value": "={{ $json.body.data.buyer.address.country_iso }}",
+              "type": "string"
+            },
+            {
+              "id": "55febf1e-7b64-4a98-a19b-003704ccd1c1",
+              "name": "Phone",
+              "value": "={{ $json.body.data.buyer.checkout_phone }}",
+              "type": "string"
+            },
+            {
+              "id": "5781dd3e-4ab4-4ba9-8162-c6ae24381b89",
+              "name": "Transaction",
+              "value": "={{ $json.body.data.purchase.transaction }}",
+              "type": "string"
+            },
+            {
+              "id": "22c21b19-8a96-4ae5-a413-4a51ed1fdabe",
+              "name": "Transaction Status",
+              "value": "={{ $json.body.data.purchase.status }}",
+              "type": "string"
+            },
+            {
+              "id": "5a269f6c-1e64-4133-b805-55c598aad4d0",
+              "name": "Event",
+              "value": "={{ $json.body.event }}",
+              "type": "string"
+            },
+            {
+              "id": "d594578d-167f-4255-9e47-1cf28ff111a9",
+              "name": "Correo de prueba",
+              "value": "kevinquiroz@valtmx.com",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1104,
+        128
+      ],
+      "id": "5ef986ff-f350-4759-a59b-a924b4287d50",
+      "name": "Datos Hotmart"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c66ee2da-68b8-467f-834a-611d41e6da5c",
+              "leftValue": "={{ $json.Email === $('Datos Hotmart').item.json.Email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -480,
+        128
+      ],
+      "id": "cc379398-2eb8-48ad-86c9-bc7e63811a7a",
+      "name": "Email ya existe en Monday?"
+    },
+    {
+      "parameters": {
+        "resource": "boardItem",
+        "operation": "changeColumnValue",
+        "boardId": "18379463302",
+        "itemId": "={{ $('Obtener opens').item.json.id }}",
+        "columnId": "color_mkxxcy0g",
+        "value": "={{ JSON.stringify({ label: \"Ganado\" }) }}"
+      },
+      "type": "n8n-nodes-base.mondayCom",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        0
+      ],
+      "id": "ff975620-a4f0-4774-8090-b0b5f1eff957",
+      "name": "Cambiar estado a Ganado",
+      "alwaysOutputData": true,
+      "credentials": {
+        "mondayComApi": {
+          "id": "jq04ZaznQx8nOr7b",
+          "name": "Monday.com - Valtmx account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        240
+      ],
+      "id": "a269d070-a118-4c5c-accc-7bbaab0f993e",
+      "name": "No hacer nada"
+    }
+  ],
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "shared": [
+    {
+      "updatedAt": "2025-12-15T18:16:53.570Z",
+      "createdAt": "2025-12-15T18:16:53.570Z",
+      "role": "workflow:owner",
+      "workflowId": "lv1DW9O5DCGSlIab",
+      "projectId": "K3qTwdhfsN7M0hmd"
+    }
+  ],
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-12-15T18:56:31.942Z",
+  "versionId": "5583e716-fad9-44d0-936c-1800c0cc45d3"
+}
