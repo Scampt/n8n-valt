@@ -1,0 +1,540 @@
+{
+  "active": true,
+  "activeVersion": {
+    "updatedAt": "2025-12-22T19:11:12.000Z",
+    "createdAt": "2025-12-22T18:50:33.637Z",
+    "versionId": "b9ead98c-6788-48bc-978c-c5190e61515a",
+    "workflowId": "H78v038iSHDXMGir",
+    "nodes": [
+      {
+        "parameters": {
+          "jsCode": "const item = $json;\n\n// helper para columnas\nfunction getColumnValue(cols, keys) {\n  for (const c of cols || []) {\n    const title = (c.column?.title || \"\").toLowerCase();\n    const id = (c.id || \"\").toLowerCase();\n\n    if (keys.some(k => title.includes(k) || id.includes(k))) {\n      if (c.value) {\n        try {\n          return JSON.parse(c.value);\n        } catch {\n          return c.value;\n        }\n      }\n      return c.text || \"\";\n    }\n  }\n  return \"\";\n}\n\n// EMAIL\nlet emailObj = getColumnValue(item.column_values, [\"email\", \"correo\", \"mail\"]);\nlet email = \"\";\n\nif (typeof emailObj === \"string\") email = emailObj;\nif (typeof emailObj === \"object\" && emailObj.email) email = emailObj.email;\n\nemail = (email || \"\").trim().toLowerCase();\n\n// PHONE\nlet phoneObj = getColumnValue(item.column_values, [\"phone\", \"telefono\", \"tel\"]);\nlet phone = \"\";\n\nif (typeof phoneObj === \"string\") phone = phoneObj;\nif (typeof phoneObj === \"object\" && phoneObj.phone) phone = phoneObj.phone;\n\nphone = (phone || \"\").replace(/[^\\d+]/g, \"\");\n\n// NAME → split\nconst rawName = (item.name || \"\").trim();\nconst parts = rawName.split(/\\s+/).filter(Boolean);\n\nconst firstName = parts.shift() || \"\";\nconst lastName = parts.join(\" \");\n\n// OUTPUT\nreturn [{\n  json: {\n    email,\n    phone,\n    firstName,\n    lastName,\n    itemId: String(item.id)\n  }\n}];\n"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          384,
+          288
+        ],
+        "id": "9dc2b993-91df-47dd-8c77-9f85013f302b",
+        "name": "Normalizar datos"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "9fac1793-741f-4a76-ab97-9b659a50674e",
+                "leftValue": "={{ $json.email }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          608,
+          288
+        ],
+        "id": "5d18514a-0d26-4326-82fc-9f92e6e9cec5",
+        "name": "¿Email existe?"
+      },
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "monday-mailchimp-upsert",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -80,
+          288
+        ],
+        "id": "e0a0210a-2240-413e-ae02-1d1df46c7357",
+        "name": "Monday Trigger",
+        "webhookId": "0df0a4d6-ad3a-4a68-8725-8e1a334adfa4"
+      },
+      {
+        "parameters": {
+          "method": "PUT",
+          "url": "=https://us4.api.mailchimp.com/3.0/lists/23892773fe/members/{{ $json.subscriberHash }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBasicAuth",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"email_address\": \"{{ $json.email }}\",\n  \"status_if_new\": \"subscribed\",\n  \"merge_fields\": {\n    \"FNAME\": \"{{ $json.firstName }}\",\n    \"LNAME\": \"{{ $json.lastName }}\",\n    \"PHONE\": \"{{ $json.phone }}\",\n    \"MMERGE5\": \"{{ $json.itemId }}\"\n  }\n}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          1056,
+          288
+        ],
+        "id": "f4c6a75a-da4a-452e-b28d-92f8418565a1",
+        "name": "Mailchimp UPSERT",
+        "credentials": {
+          "httpBasicAuth": {
+            "id": "BuXwnH7PzFWf6A83",
+            "name": "Mailchimp APIKey - Armario del caballero"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "resource": "boardItem",
+          "operation": "get",
+          "itemId": "={{ $json.body.event.pulseId.toString() }}"
+        },
+        "type": "n8n-nodes-base.mondayCom",
+        "typeVersion": 1,
+        "position": [
+          160,
+          288
+        ],
+        "id": "d860e450-beaa-4ccc-bf9a-1ea0720afc8c",
+        "name": "Obtener Item ID",
+        "credentials": {
+          "mondayComApi": {
+            "id": "jq04ZaznQx8nOr7b",
+            "name": "Monday.com - Valtmx account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "// --- MD5 SIN crypto (compatible con n8n sandbox) ---\nfunction md5(str) {\n  function L(k, d) { return (k << d) | (k >>> (32 - d)); }\n  function K(G, k) { let I, d, F, H, x; F = G & 2147483648; H = k & 2147483648; I = G & 1073741824; d = k & 1073741824; x = (G & 1073741823) + (k & 1073741823);\n    if (I & d) return x ^ 2147483648 ^ F ^ H;\n    if (I | d) {\n        if (x & 1073741824) return x ^ 3221225472 ^ F ^ H;\n        else return x ^ 1073741824 ^ F ^ H;\n    } else return x ^ F ^ H;\n  }\n  function r(d, F, k) { return (d & F) | (~d & k); }\n  function q(d, F, k) { return (d & k) | (F & ~k); }\n  function p(d, F, k) { return d ^ F ^ k; }\n  function n(d, F, k) { return F ^ (d | ~k); }\n  function u(G, F, aa, Z, k, H, I) { G = K(G, K(K(r(F, aa, Z), k), I)); return K(L(G, H), F); }\n  function f(G, F, aa, Z, k, H, I) { G = K(G, K(K(q(F, aa, Z), k), I)); return K(L(G, H), F); }\n  function D(G, F, aa, Z, k, H, I) { G = K(G, K(K(p(F, aa, Z), k), I)); return K(L(G, H), F); }\n  function t(G, F, aa, Z, k, H, I) { G = K(G, K(K(n(F, aa, Z), k), I)); return K(L(G, H), F); }\n  function E(G) {\n    let Z, k = G.length, x = k + 8, I = (x - (x % 64)) / 64 + 1, aa = new Array(I * 16 - 1); \n    let d = 0, F = 0;\n    while (F < k) { Z = (F - (F % 4)) / 4; d = (F % 4) * 8; aa[Z] = aa[Z] | (G.charCodeAt(F) << d); F++; }\n    Z = (F - (F % 4)) / 4; d = (F % 4) * 8; aa[Z] = aa[Z] | (128 << d); aa[I * 16 - 2] = k << 3; aa[I * 16 - 1] = k >>> 29; return aa;\n  }\n  function B(x) { let k = \"\", F = \"\", d; for (d = 0; d <= 3; d++) { F = (x >>> (d * 8)) & 255; F = \"0\" + F.toString(16); k += F.substr(F.length - 2, 2); } return k; }\n  function J(G) {\n    G = G.replace(/\\r\\n/g, \"\\n\");\n    let d = \"\";\n    for (let F = 0; F < G.length; F++) {\n      let x = G.charCodeAt(F);\n      if (x < 128) d += String.fromCharCode(x);\n      else if (x < 2048) {\n        d += String.fromCharCode((x >> 6) | 192);\n        d += String.fromCharCode((x & 63) | 128);\n      } else {\n        d += String.fromCharCode((x >> 12) | 224);\n        d += String.fromCharCode(((x >> 6) & 63) | 128);\n        d += String.fromCharCode((x & 63) | 128);\n      }\n    }\n    return d;\n  }\n\n  let aa = [], G, F, k, Z, H, I, d, x;\n  str = J(str);\n  aa = E(str);\n  G = 1732584193; F = 4023233417; k = 2562383102; Z = 271733878;\n\n  for (let o = 0; o < aa.length; o += 16) {\n    H = G; I = F; d = k; x = Z;\n    G = u(G, F, k, Z, aa[o + 0], 7, 3614090360);\n    Z = u(Z, G, F, k, aa[o + 1], 12, 3905402710);\n    F = u(F, Z, G, F, aa[o + 2], 17, 606105819);\n    k = u(k, F, Z, G, aa[o + 3], 22, 3250441966);\n    G = u(G, F, k, Z, aa[o + 4], 7, 4118548399);\n    Z = u(Z, G, F, k, aa[o + 5], 12, 1200080426);\n    F = u(F, Z, G, F, aa[o + 6], 17, 2821735955);\n    k = u(k, F, Z, G, aa[o + 7], 22, 4249261313);\n    G = f(G, F, k, Z, aa[o + 8], 7, 1770035416);\n    Z = f(Z, G, F, k, aa[o + 9], 12, 2336552879);\n    F = f(F, Z, G, F, aa[o + 10], 17, 4294925233);\n    k = f(k, F, Z, G, aa[o + 11], 22, 2304563134);\n    G = D(G, F, k, Z, aa[o + 12], 7, 1804603682);\n    Z = D(Z, G, F, k, aa[o + 13], 12, 4254626195);\n    F = D(F, Z, G, F, aa[o + 14], 17, 2792965006);\n    k = D(k, F, Z, G, aa[o + 15], 22, 1236535329);\n    G = t(G, F, k, Z, aa[o + 0], 7, 4129170786);\n    Z = t(Z, G, F, k, aa[o + 7], 12, 3225465664);\n    F = t(F, Z, G, F, aa[o + 14], 17, 643717713);\n    k = t(k, F, Z, G, aa[o + 5], 22, 3921069994);\n    G = t(G, F, k, Z, aa[o + 12], 7, 3593408605);\n    Z = t(Z, G, F, k, aa[o + 3], 12, 38016083);\n    F = t(F, Z, G, F, aa[o + 10], 17, 3634488961);\n    k = t(k, F, Z, G, aa[o + 1], 22, 3889429448);\n    G = t(G, F, k, Z, aa[o + 8], 7, 568446438);\n    Z = t(Z, G, F, k, aa[o + 15], 12, 3275163606);\n    F = t(F, Z, G, F, aa[o + 6], 17, 4107603335);\n    k = t(k, F, Z, G, aa[o + 13], 22, 1163531501);\n    G = K(G, H); F = K(F, I); k = K(k, d); Z = K(Z, x);\n  }\n\n  return (B(G) + B(F) + B(k) + B(Z)).toLowerCase();\n}\n\n// ---- INPUT ----\nconst email = $json.email.toLowerCase();\nconst itemId = $json.itemId;\n\nreturn [\n  {\n    json: {\n      itemId,              // 👈 agregado\n      email,\n      phone: $json.phone,\n      firstName: $json.firstName,\n      lastName: $json.lastName,\n      subscriberHash: md5(email),\n    }\n  }\n];\n"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          832,
+          288
+        ],
+        "id": "18bed617-7d20-4aa4-baca-fe018bc47d6f",
+        "name": "Generar Hash Mailchimp"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=https://us4.api.mailchimp.com/3.0/lists/23892773fe/members/{{ $json.subscriberHash }}/events",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBasicAuth",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"name\": \"monday_contact_synced\"\n}",
+          "options": {
+            "response": {
+              "response": {
+                "neverError": true
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3,
+        "position": [
+          1248,
+          288
+        ],
+        "id": "402cc1c8-6914-4ce5-bd79-0bea0c660490",
+        "name": "Add tag monday_contact_synced",
+        "credentials": {
+          "httpBasicAuth": {
+            "id": "BuXwnH7PzFWf6A83",
+            "name": "Mailchimp APIKey - Armario del caballero"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Normalizar datos": {
+        "main": [
+          [
+            {
+              "node": "¿Email existe?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "¿Email existe?": {
+        "main": [
+          [
+            {
+              "node": "Generar Hash Mailchimp",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Monday Trigger": {
+        "main": [
+          [
+            {
+              "node": "Obtener Item ID",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Obtener Item ID": {
+        "main": [
+          [
+            {
+              "node": "Normalizar datos",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Generar Hash Mailchimp": {
+        "main": [
+          [
+            {
+              "node": "Mailchimp UPSERT",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Mailchimp UPSERT": {
+        "main": [
+          [
+            {
+              "node": "Add tag monday_contact_synced",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Kevin Quiroz",
+    "name": "Version b9ead98c",
+    "description": ""
+  },
+  "activeVersionId": "b9ead98c-6788-48bc-978c-c5190e61515a",
+  "connections": {
+    "Normalizar datos": {
+      "main": [
+        [
+          {
+            "node": "¿Email existe?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Email existe?": {
+      "main": [
+        [
+          {
+            "node": "Generar Hash Mailchimp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Monday Trigger": {
+      "main": [
+        [
+          {
+            "node": "Obtener Item ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Item ID": {
+      "main": [
+        [
+          {
+            "node": "Normalizar datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar Hash Mailchimp": {
+      "main": [
+        [
+          {
+            "node": "Mailchimp UPSERT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mailchimp UPSERT": {
+      "main": [
+        [
+          {
+            "node": "Add tag monday_contact_synced",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-12-15T18:17:34.676Z",
+  "id": "H78v038iSHDXMGir",
+  "isArchived": false,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "name": "Export Monday to Mailchimp - All DATA",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const item = $json;\n\n// helper para columnas\nfunction getColumnValue(cols, keys) {\n  for (const c of cols || []) {\n    const title = (c.column?.title || \"\").toLowerCase();\n    const id = (c.id || \"\").toLowerCase();\n\n    if (keys.some(k => title.includes(k) || id.includes(k))) {\n      if (c.value) {\n        try {\n          return JSON.parse(c.value);\n        } catch {\n          return c.value;\n        }\n      }\n      return c.text || \"\";\n    }\n  }\n  return \"\";\n}\n\n// EMAIL\nlet emailObj = getColumnValue(item.column_values, [\"email\", \"correo\", \"mail\"]);\nlet email = \"\";\n\nif (typeof emailObj === \"string\") email = emailObj;\nif (typeof emailObj === \"object\" && emailObj.email) email = emailObj.email;\n\nemail = (email || \"\").trim().toLowerCase();\n\n// PHONE\nlet phoneObj = getColumnValue(item.column_values, [\"phone\", \"telefono\", \"tel\"]);\nlet phone = \"\";\n\nif (typeof phoneObj === \"string\") phone = phoneObj;\nif (typeof phoneObj === \"object\" && phoneObj.phone) phone = phoneObj.phone;\n\nphone = (phone || \"\").replace(/[^\\d+]/g, \"\");\n\n// NAME → split\nconst rawName = (item.name || \"\").trim();\nconst parts = rawName.split(/\\s+/).filter(Boolean);\n\nconst firstName = parts.shift() || \"\";\nconst lastName = parts.join(\" \");\n\n// OUTPUT\nreturn [{\n  json: {\n    email,\n    phone,\n    firstName,\n    lastName,\n    itemId: String(item.id)\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        384,
+        288
+      ],
+      "id": "9dc2b993-91df-47dd-8c77-9f85013f302b",
+      "name": "Normalizar datos"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9fac1793-741f-4a76-ab97-9b659a50674e",
+              "leftValue": "={{ $json.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        608,
+        288
+      ],
+      "id": "5d18514a-0d26-4326-82fc-9f92e6e9cec5",
+      "name": "¿Email existe?"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "monday-mailchimp-upsert",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -80,
+        288
+      ],
+      "id": "e0a0210a-2240-413e-ae02-1d1df46c7357",
+      "name": "Monday Trigger",
+      "webhookId": "0df0a4d6-ad3a-4a68-8725-8e1a334adfa4"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://us4.api.mailchimp.com/3.0/lists/23892773fe/members/{{ $json.subscriberHash }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"email_address\": \"{{ $json.email }}\",\n  \"status_if_new\": \"subscribed\",\n  \"merge_fields\": {\n    \"FNAME\": \"{{ $json.firstName }}\",\n    \"LNAME\": \"{{ $json.lastName }}\",\n    \"PHONE\": \"{{ $json.phone }}\",\n    \"MMERGE5\": \"{{ $json.itemId }}\"\n  }\n}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1056,
+        288
+      ],
+      "id": "f4c6a75a-da4a-452e-b28d-92f8418565a1",
+      "name": "Mailchimp UPSERT",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "BuXwnH7PzFWf6A83",
+          "name": "Mailchimp APIKey - Armario del caballero"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "boardItem",
+        "operation": "get",
+        "itemId": "={{ $json.body.event.pulseId.toString() }}"
+      },
+      "type": "n8n-nodes-base.mondayCom",
+      "typeVersion": 1,
+      "position": [
+        160,
+        288
+      ],
+      "id": "d860e450-beaa-4ccc-bf9a-1ea0720afc8c",
+      "name": "Obtener Item ID",
+      "credentials": {
+        "mondayComApi": {
+          "id": "jq04ZaznQx8nOr7b",
+          "name": "Monday.com - Valtmx account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- MD5 SIN crypto (compatible con n8n sandbox) ---\nfunction md5(str) {\n  function L(k, d) { return (k << d) | (k >>> (32 - d)); }\n  function K(G, k) { let I, d, F, H, x; F = G & 2147483648; H = k & 2147483648; I = G & 1073741824; d = k & 1073741824; x = (G & 1073741823) + (k & 1073741823);\n    if (I & d) return x ^ 2147483648 ^ F ^ H;\n    if (I | d) {\n        if (x & 1073741824) return x ^ 3221225472 ^ F ^ H;\n        else return x ^ 1073741824 ^ F ^ H;\n    } else return x ^ F ^ H;\n  }\n  function r(d, F, k) { return (d & F) | (~d & k); }\n  function q(d, F, k) { return (d & k) | (F & ~k); }\n  function p(d, F, k) { return d ^ F ^ k; }\n  function n(d, F, k) { return F ^ (d | ~k); }\n  function u(G, F, aa, Z, k, H, I) { G = K(G, K(K(r(F, aa, Z), k), I)); return K(L(G, H), F); }\n  function f(G, F, aa, Z, k, H, I) { G = K(G, K(K(q(F, aa, Z), k), I)); return K(L(G, H), F); }\n  function D(G, F, aa, Z, k, H, I) { G = K(G, K(K(p(F, aa, Z), k), I)); return K(L(G, H), F); }\n  function t(G, F, aa, Z, k, H, I) { G = K(G, K(K(n(F, aa, Z), k), I)); return K(L(G, H), F); }\n  function E(G) {\n    let Z, k = G.length, x = k + 8, I = (x - (x % 64)) / 64 + 1, aa = new Array(I * 16 - 1); \n    let d = 0, F = 0;\n    while (F < k) { Z = (F - (F % 4)) / 4; d = (F % 4) * 8; aa[Z] = aa[Z] | (G.charCodeAt(F) << d); F++; }\n    Z = (F - (F % 4)) / 4; d = (F % 4) * 8; aa[Z] = aa[Z] | (128 << d); aa[I * 16 - 2] = k << 3; aa[I * 16 - 1] = k >>> 29; return aa;\n  }\n  function B(x) { let k = \"\", F = \"\", d; for (d = 0; d <= 3; d++) { F = (x >>> (d * 8)) & 255; F = \"0\" + F.toString(16); k += F.substr(F.length - 2, 2); } return k; }\n  function J(G) {\n    G = G.replace(/\\r\\n/g, \"\\n\");\n    let d = \"\";\n    for (let F = 0; F < G.length; F++) {\n      let x = G.charCodeAt(F);\n      if (x < 128) d += String.fromCharCode(x);\n      else if (x < 2048) {\n        d += String.fromCharCode((x >> 6) | 192);\n        d += String.fromCharCode((x & 63) | 128);\n      } else {\n        d += String.fromCharCode((x >> 12) | 224);\n        d += String.fromCharCode(((x >> 6) & 63) | 128);\n        d += String.fromCharCode((x & 63) | 128);\n      }\n    }\n    return d;\n  }\n\n  let aa = [], G, F, k, Z, H, I, d, x;\n  str = J(str);\n  aa = E(str);\n  G = 1732584193; F = 4023233417; k = 2562383102; Z = 271733878;\n\n  for (let o = 0; o < aa.length; o += 16) {\n    H = G; I = F; d = k; x = Z;\n    G = u(G, F, k, Z, aa[o + 0], 7, 3614090360);\n    Z = u(Z, G, F, k, aa[o + 1], 12, 3905402710);\n    F = u(F, Z, G, F, aa[o + 2], 17, 606105819);\n    k = u(k, F, Z, G, aa[o + 3], 22, 3250441966);\n    G = u(G, F, k, Z, aa[o + 4], 7, 4118548399);\n    Z = u(Z, G, F, k, aa[o + 5], 12, 1200080426);\n    F = u(F, Z, G, F, aa[o + 6], 17, 2821735955);\n    k = u(k, F, Z, G, aa[o + 7], 22, 4249261313);\n    G = f(G, F, k, Z, aa[o + 8], 7, 1770035416);\n    Z = f(Z, G, F, k, aa[o + 9], 12, 2336552879);\n    F = f(F, Z, G, F, aa[o + 10], 17, 4294925233);\n    k = f(k, F, Z, G, aa[o + 11], 22, 2304563134);\n    G = D(G, F, k, Z, aa[o + 12], 7, 1804603682);\n    Z = D(Z, G, F, k, aa[o + 13], 12, 4254626195);\n    F = D(F, Z, G, F, aa[o + 14], 17, 2792965006);\n    k = D(k, F, Z, G, aa[o + 15], 22, 1236535329);\n    G = t(G, F, k, Z, aa[o + 0], 7, 4129170786);\n    Z = t(Z, G, F, k, aa[o + 7], 12, 3225465664);\n    F = t(F, Z, G, F, aa[o + 14], 17, 643717713);\n    k = t(k, F, Z, G, aa[o + 5], 22, 3921069994);\n    G = t(G, F, k, Z, aa[o + 12], 7, 3593408605);\n    Z = t(Z, G, F, k, aa[o + 3], 12, 38016083);\n    F = t(F, Z, G, F, aa[o + 10], 17, 3634488961);\n    k = t(k, F, Z, G, aa[o + 1], 22, 3889429448);\n    G = t(G, F, k, Z, aa[o + 8], 7, 568446438);\n    Z = t(Z, G, F, k, aa[o + 15], 12, 3275163606);\n    F = t(F, Z, G, F, aa[o + 6], 17, 4107603335);\n    k = t(k, F, Z, G, aa[o + 13], 22, 1163531501);\n    G = K(G, H); F = K(F, I); k = K(k, d); Z = K(Z, x);\n  }\n\n  return (B(G) + B(F) + B(k) + B(Z)).toLowerCase();\n}\n\n// ---- INPUT ----\nconst email = $json.email.toLowerCase();\nconst itemId = $json.itemId;\n\nreturn [\n  {\n    json: {\n      itemId,              // 👈 agregado\n      email,\n      phone: $json.phone,\n      firstName: $json.firstName,\n      lastName: $json.lastName,\n      subscriberHash: md5(email),\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        288
+      ],
+      "id": "18bed617-7d20-4aa4-baca-fe018bc47d6f",
+      "name": "Generar Hash Mailchimp"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://us4.api.mailchimp.com/3.0/lists/23892773fe/members/{{ $json.subscriberHash }}/events",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"name\": \"monday_contact_synced\"\n}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1248,
+        288
+      ],
+      "id": "402cc1c8-6914-4ce5-bd79-0bea0c660490",
+      "name": "Add tag monday_contact_synced",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "BuXwnH7PzFWf6A83",
+          "name": "Mailchimp APIKey - Armario del caballero"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "timeSavedMode": "fixed",
+    "timezone": "America/Mexico_City",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "shared": [
+    {
+      "updatedAt": "2025-12-15T18:17:34.679Z",
+      "createdAt": "2025-12-15T18:17:34.679Z",
+      "role": "workflow:owner",
+      "workflowId": "H78v038iSHDXMGir",
+      "projectId": "K3qTwdhfsN7M0hmd"
+    }
+  ],
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-12-22T18:50:33.637Z",
+  "versionId": "b9ead98c-6788-48bc-978c-c5190e61515a"
+}
