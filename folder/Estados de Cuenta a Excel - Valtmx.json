@@ -1,0 +1,512 @@
+{
+  "active": true,
+  "activeVersion": {
+    "updatedAt": "2025-12-15T18:58:17.000Z",
+    "createdAt": "2025-12-15T18:58:15.508Z",
+    "versionId": "aa0bf760-9a73-4af2-97f8-d6350c763b58",
+    "workflowId": "wuM5TxRk3mCxTvx8",
+    "nodes": [
+      {
+        "parameters": {
+          "formTitle": "Analizador de Estados de Cuenta",
+          "formDescription": "© Todos los derechos reservados a Valtmx 2025",
+          "formFields": {
+            "values": [
+              {
+                "fieldLabel": "Nombre",
+                "placeholder": "Ingresa tu nombre",
+                "requiredField": true
+              },
+              {
+                "fieldLabel": "Email",
+                "fieldType": "email",
+                "placeholder": "Ingresa tu email",
+                "requiredField": true
+              },
+              {
+                "fieldLabel": "Archivo",
+                "fieldType": "file",
+                "requiredField": true
+              }
+            ]
+          },
+          "options": {
+            "appendAttribution": false,
+            "useWorkflowTimezone": true
+          }
+        },
+        "type": "n8n-nodes-base.formTrigger",
+        "typeVersion": 2.3,
+        "position": [
+          -256,
+          0
+        ],
+        "id": "e8fa1965-6b59-44de-bf22-674ce9aada28",
+        "name": "Subir estado de cuenta",
+        "webhookId": "81121047-6b04-4432-bd8d-03df42d48f3a"
+      },
+      {
+        "parameters": {
+          "operation": "binaryToPropery",
+          "binaryPropertyName": "Archivo",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.extractFromFile",
+        "typeVersion": 1.1,
+        "position": [
+          -48,
+          0
+        ],
+        "id": "2af43c1a-3e6d-45fd-8b39-9cebe46f63f2",
+        "name": "Extraer archivo (Base64)"
+      },
+      {
+        "parameters": {
+          "operation": "toBinary",
+          "sourceProperty": "data",
+          "options": {
+            "fileName": "estado_cuenta.pdf",
+            "mimeType": "application/pdf"
+          }
+        },
+        "type": "n8n-nodes-base.convertToFile",
+        "typeVersion": 1.1,
+        "position": [
+          160,
+          0
+        ],
+        "id": "cc8a3c46-ecb7-45b1-964c-cb5d09bd5bb5",
+        "name": "Convertir Base64 → Archivo"
+      },
+      {
+        "parameters": {
+          "resource": "file",
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.openAi",
+        "typeVersion": 2,
+        "position": [
+          384,
+          0
+        ],
+        "id": "eacd17ca-083e-43f6-b081-da86d3d439ab",
+        "name": "Subir PDF a OpenAI",
+        "credentials": {
+          "openAiApi": {
+            "id": "OwpXfy2xZXTL4IFI",
+            "name": "OpenAi account - soporte@valtmx.com"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "modelId": {
+            "__rl": true,
+            "value": "gpt-4.1-mini",
+            "mode": "list"
+          },
+          "responses": {
+            "values": [
+              {
+                "role": "system",
+                "content": "Eres un sistema experto en OCR financiero. Recibirás un archivo PDF y debes extraer toda la información del estado de cuenta.\n\nDevuelve únicamente un JSON con esta estructura:\n\n{\n  \"banco\": \"\",\n  \"titular\": \"\",\n  \"numero_cuenta\": \"\",\n  \"periodo\": {\n    \"inicio\": \"\",\n    \"fin\": \"\"\n  },\n  \"totales\": {\n    \"depositos\": 0,\n    \"retiros\": 0,\n    \"saldo_final\": 0\n  },\n  \"transacciones\": [\n    {\n      \"fecha\": \"\",\n      \"descripcion\": \"\",\n      \"categoria\": \"\",\n      \"tipo\": \"\",\n      \"monto\": 0,\n      \"saldo_despues\": 0\n    }\n  ]\n}\n\nSi algún dato no existe, déjalo vacío.  \nResponde únicamente con JSON válido."
+              },
+              {
+                "type": "file",
+                "fileType": "fileId",
+                "fileId": "={{ $json.id }}"
+              }
+            ]
+          },
+          "simplify": false,
+          "builtInTools": {},
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.openAi",
+        "typeVersion": 2,
+        "position": [
+          624,
+          0
+        ],
+        "name": "Analizar PDF (OpenAI OCR Fintech)",
+        "id": "a6b6a4b9-5e16-4159-9326-2fb037ee38d4",
+        "credentials": {
+          "openAiApi": {
+            "id": "OwpXfy2xZXTL4IFI",
+            "name": "OpenAi account - soporte@valtmx.com"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "// 1. Obtener el bloque de texto que contiene el JSON\nlet raw = $json.output[0].content[0].text;\n\n// 2. Quitar los ```json y ``` del modelo\nraw = raw.replace(/```json/g, \"\").replace(/```/g, \"\").trim();\n\n// 3. Convertir a objeto real\nlet data = JSON.parse(raw);\n\n// 4. Convertir transacciones a filas tipo spreadsheet\nconst rows = data.transacciones.map(t => ({\n  banco: data.banco ?? \"\",\n  titular: data.titular ?? \"\",\n  numero_cuenta: data.numero_cuenta ?? \"\",\n  periodo_inicio: data.periodo?.inicio ?? \"\",\n  periodo_fin: data.periodo?.fin ?? \"\",\n  fecha: t.fecha ?? \"\",\n  descripcion: t.descripcion ?? \"\",\n  categoria: t.categoria ?? \"\",\n  tipo: t.tipo ?? \"\",\n  monto: t.monto ?? 0,\n  saldo_despues: t.saldo_despues ?? 0,\n}));\n\n// 5. Regresar la lista de filas para Google Sheets\nreturn rows.map(r => ({ json: r }));"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          976,
+          0
+        ],
+        "id": "6a731731-bdc1-4624-a719-4f230ab8fc4a",
+        "name": "Transformar transacciones → Filas"
+      },
+      {
+        "parameters": {
+          "operation": "appendOrUpdate",
+          "documentId": {
+            "__rl": true,
+            "mode": "list",
+            "value": ""
+          },
+          "sheetName": {
+            "__rl": true,
+            "mode": "list",
+            "value": ""
+          }
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          1184,
+          0
+        ],
+        "id": "075560da-2942-4cbe-8b8d-edd4cb81a6cb",
+        "name": "Guardar filas en Sheets",
+        "disabled": true
+      }
+    ],
+    "connections": {
+      "Subir estado de cuenta": {
+        "main": [
+          [
+            {
+              "node": "Extraer archivo (Base64)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extraer archivo (Base64)": {
+        "main": [
+          [
+            {
+              "node": "Convertir Base64 → Archivo",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Convertir Base64 → Archivo": {
+        "main": [
+          [
+            {
+              "node": "Subir PDF a OpenAI",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Subir PDF a OpenAI": {
+        "main": [
+          [
+            {
+              "node": "Analizar PDF (OpenAI OCR Fintech)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Analizar PDF (OpenAI OCR Fintech)": {
+        "main": [
+          [
+            {
+              "node": "Transformar transacciones → Filas",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Transformar transacciones → Filas": {
+        "main": [
+          [
+            {
+              "node": "Guardar filas en Sheets",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Kevin Quiroz",
+    "name": "Version aa0bf760",
+    "description": ""
+  },
+  "activeVersionId": "aa0bf760-9a73-4af2-97f8-d6350c763b58",
+  "connections": {
+    "Subir estado de cuenta": {
+      "main": [
+        [
+          {
+            "node": "Extraer archivo (Base64)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer archivo (Base64)": {
+      "main": [
+        [
+          {
+            "node": "Convertir Base64 → Archivo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convertir Base64 → Archivo": {
+      "main": [
+        [
+          {
+            "node": "Subir PDF a OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Subir PDF a OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Analizar PDF (OpenAI OCR Fintech)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analizar PDF (OpenAI OCR Fintech)": {
+      "main": [
+        [
+          {
+            "node": "Transformar transacciones → Filas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transformar transacciones → Filas": {
+      "main": [
+        [
+          {
+            "node": "Guardar filas en Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-12-15T18:15:32.786Z",
+  "id": "wuM5TxRk3mCxTvx8",
+  "isArchived": false,
+  "meta": null,
+  "name": "Estados de Cuenta a Excel - Valtmx",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Analizador de Estados de Cuenta",
+        "formDescription": "© Todos los derechos reservados a Valtmx 2025",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Nombre",
+              "placeholder": "Ingresa tu nombre",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "placeholder": "Ingresa tu email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Archivo",
+              "fieldType": "file",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false,
+          "useWorkflowTimezone": true
+        }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        -256,
+        0
+      ],
+      "id": "e8fa1965-6b59-44de-bf22-674ce9aada28",
+      "name": "Subir estado de cuenta",
+      "webhookId": "81121047-6b04-4432-bd8d-03df42d48f3a"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "binaryPropertyName": "Archivo",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -48,
+        0
+      ],
+      "id": "2af43c1a-3e6d-45fd-8b39-9cebe46f63f2",
+      "name": "Extraer archivo (Base64)"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data",
+        "options": {
+          "fileName": "estado_cuenta.pdf",
+          "mimeType": "application/pdf"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        160,
+        0
+      ],
+      "id": "cc8a3c46-ecb7-45b1-964c-cb5d09bd5bb5",
+      "name": "Convertir Base64 → Archivo"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        384,
+        0
+      ],
+      "id": "eacd17ca-083e-43f6-b081-da86d3d439ab",
+      "name": "Subir PDF a OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "OwpXfy2xZXTL4IFI",
+          "name": "OpenAi account - soporte@valtmx.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Eres un sistema experto en OCR financiero. Recibirás un archivo PDF y debes extraer toda la información del estado de cuenta.\n\nDevuelve únicamente un JSON con esta estructura:\n\n{\n  \"banco\": \"\",\n  \"titular\": \"\",\n  \"numero_cuenta\": \"\",\n  \"periodo\": {\n    \"inicio\": \"\",\n    \"fin\": \"\"\n  },\n  \"totales\": {\n    \"depositos\": 0,\n    \"retiros\": 0,\n    \"saldo_final\": 0\n  },\n  \"transacciones\": [\n    {\n      \"fecha\": \"\",\n      \"descripcion\": \"\",\n      \"categoria\": \"\",\n      \"tipo\": \"\",\n      \"monto\": 0,\n      \"saldo_despues\": 0\n    }\n  ]\n}\n\nSi algún dato no existe, déjalo vacío.  \nResponde únicamente con JSON válido."
+            },
+            {
+              "type": "file",
+              "fileType": "fileId",
+              "fileId": "={{ $json.id }}"
+            }
+          ]
+        },
+        "simplify": false,
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "name": "Analizar PDF (OpenAI OCR Fintech)",
+      "id": "a6b6a4b9-5e16-4159-9326-2fb037ee38d4",
+      "credentials": {
+        "openAiApi": {
+          "id": "OwpXfy2xZXTL4IFI",
+          "name": "OpenAi account - soporte@valtmx.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Obtener el bloque de texto que contiene el JSON\nlet raw = $json.output[0].content[0].text;\n\n// 2. Quitar los ```json y ``` del modelo\nraw = raw.replace(/```json/g, \"\").replace(/```/g, \"\").trim();\n\n// 3. Convertir a objeto real\nlet data = JSON.parse(raw);\n\n// 4. Convertir transacciones a filas tipo spreadsheet\nconst rows = data.transacciones.map(t => ({\n  banco: data.banco ?? \"\",\n  titular: data.titular ?? \"\",\n  numero_cuenta: data.numero_cuenta ?? \"\",\n  periodo_inicio: data.periodo?.inicio ?? \"\",\n  periodo_fin: data.periodo?.fin ?? \"\",\n  fecha: t.fecha ?? \"\",\n  descripcion: t.descripcion ?? \"\",\n  categoria: t.categoria ?? \"\",\n  tipo: t.tipo ?? \"\",\n  monto: t.monto ?? 0,\n  saldo_despues: t.saldo_despues ?? 0,\n}));\n\n// 5. Regresar la lista de filas para Google Sheets\nreturn rows.map(r => ({ json: r }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        976,
+        0
+      ],
+      "id": "6a731731-bdc1-4624-a719-4f230ab8fc4a",
+      "name": "Transformar transacciones → Filas"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1184,
+        0
+      ],
+      "id": "075560da-2942-4cbe-8b8d-edd4cb81a6cb",
+      "name": "Guardar filas en Sheets",
+      "disabled": true
+    }
+  ],
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "shared": [
+    {
+      "updatedAt": "2025-12-15T18:15:32.939Z",
+      "createdAt": "2025-12-15T18:15:32.939Z",
+      "role": "workflow:owner",
+      "workflowId": "wuM5TxRk3mCxTvx8",
+      "projectId": "K3qTwdhfsN7M0hmd"
+    }
+  ],
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-12-15T18:58:15.508Z",
+  "versionId": "aa0bf760-9a73-4af2-97f8-d6350c763b58"
+}
