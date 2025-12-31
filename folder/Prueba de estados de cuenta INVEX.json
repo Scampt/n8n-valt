@@ -1,0 +1,400 @@
+{
+  "active": true,
+  "activeVersion": {
+    "updatedAt": "2025-12-15T19:06:08.000Z",
+    "createdAt": "2025-12-15T19:06:05.169Z",
+    "versionId": "34840e01-7943-4368-98cf-4631943247c2",
+    "workflowId": "wt7JZdNq6DZhzgHX",
+    "nodes": [
+      {
+        "parameters": {
+          "operation": "download",
+          "fileId": {
+            "__rl": true,
+            "value": "1cZTXYQ7OdYewqvdRdvgKLkzARAEL85vz",
+            "mode": "list",
+            "cachedResultName": "FAED9EAE-3874-4449-BD70-3C966246D803.pdf",
+            "cachedResultUrl": "https://drive.google.com/file/d/1cZTXYQ7OdYewqvdRdvgKLkzARAEL85vz/view?usp=drivesdk"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleDrive",
+        "typeVersion": 3,
+        "position": [
+          304,
+          -144
+        ],
+        "id": "592709b4-2834-4226-b04f-843c5a784f92",
+        "name": "Download file",
+        "credentials": {
+          "googleDriveOAuth2Api": {
+            "id": "ny0GY2BgcPU0kpld",
+            "name": "Google Drive account - soporte@valtmx.com"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "={{ $('When chat message received').item.json.chatInput }}",
+          "options": {
+            "systemMessage": "=Eres un analista financiero experto en interpretar estados de cuenta INVEX Volaris.\n\nA continuación tienes el texto completo del estado de cuenta, que usarás solo como referencia para responder preguntas:\n{{ $json['Extracted PDF Text'] }}\n\nImportante:\n- No repitas el contenido del documento a menos que sea necesario.\n- Espera a que el usuario formule una pregunta y responde con base en el documento.\n- Si el usuario solo saluda o no pide nada específico, responde de forma breve y cordial (por ejemplo: “¡Hola! Puedo ayudarte a analizar tu estado de cuenta, ¿qué te gustaría saber?”).\n- Si el documento no contiene la información pedida, di: “Esa información no aparece en el estado de cuenta”.\n- No inventes ni calcules más allá de lo que aparece en el archivo.\n\nLo que vas a hacer es interactuar con el usuario de manera amable y responder a su solicitudes que te vaya haciendo \n"
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 2.2,
+        "position": [
+          912,
+          -144
+        ],
+        "id": "6fda7e54-ff54-4f86-b8b3-28db60e53b5a",
+        "name": "AI Agent"
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "value": "gpt-4o-mini",
+            "mode": "list",
+            "cachedResultName": "gpt-4o-mini"
+          },
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.2,
+        "position": [
+          800,
+          112
+        ],
+        "id": "9d728c8c-4c44-41f9-9ae3-ee30d2fdf1f9",
+        "name": "OpenAI Chat Model",
+        "credentials": {
+          "openAiApi": {
+            "id": "OwpXfy2xZXTL4IFI",
+            "name": "OpenAi account - soporte@valtmx.com"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "public": true,
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          48,
+          -144
+        ],
+        "id": "d161a903-ec57-46a8-b8c9-e852062d80bd",
+        "name": "When chat message received",
+        "webhookId": "c4ff77dc-8052-40e9-9bb7-d753f451aa0d",
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "operation": "pdf",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.extractFromFile",
+        "typeVersion": 1,
+        "position": [
+          512,
+          -144
+        ],
+        "id": "e95a83d4-6cd6-4434-b2fc-c67ce32b16e7",
+        "name": "Extract from File"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "c9a4ff35-89fc-417c-8c21-663cd567bb71",
+                "name": "Extracted PDF Text",
+                "value": "={{ $json.text }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          720,
+          -144
+        ],
+        "id": "32d8776f-4eb8-4286-83f4-e0a1aee28335",
+        "name": "Edit Fields"
+      }
+    ],
+    "connections": {
+      "Download file": {
+        "main": [
+          [
+            {
+              "node": "Extract from File",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenAI Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "When chat message received": {
+        "main": [
+          [
+            {
+              "node": "Download file",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract from File": {
+        "main": [
+          [
+            {
+              "node": "Edit Fields",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Edit Fields": {
+        "main": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Kevin Quiroz",
+    "name": "Version 34840e01",
+    "description": ""
+  },
+  "activeVersionId": "34840e01-7943-4368-98cf-4631943247c2",
+  "connections": {
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-12-15T18:16:13.418Z",
+  "id": "wt7JZdNq6DZhzgHX",
+  "isArchived": false,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "name": "Prueba de estados de cuenta INVEX",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "1cZTXYQ7OdYewqvdRdvgKLkzARAEL85vz",
+          "mode": "list",
+          "cachedResultName": "FAED9EAE-3874-4449-BD70-3C966246D803.pdf",
+          "cachedResultUrl": "https://drive.google.com/file/d/1cZTXYQ7OdYewqvdRdvgKLkzARAEL85vz/view?usp=drivesdk"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        304,
+        -144
+      ],
+      "id": "592709b4-2834-4226-b04f-843c5a784f92",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "ny0GY2BgcPU0kpld",
+          "name": "Google Drive account - soporte@valtmx.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('When chat message received').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "=Eres un analista financiero experto en interpretar estados de cuenta INVEX Volaris.\n\nA continuación tienes el texto completo del estado de cuenta, que usarás solo como referencia para responder preguntas:\n{{ $json['Extracted PDF Text'] }}\n\nImportante:\n- No repitas el contenido del documento a menos que sea necesario.\n- Espera a que el usuario formule una pregunta y responde con base en el documento.\n- Si el usuario solo saluda o no pide nada específico, responde de forma breve y cordial (por ejemplo: “¡Hola! Puedo ayudarte a analizar tu estado de cuenta, ¿qué te gustaría saber?”).\n- Si el documento no contiene la información pedida, di: “Esa información no aparece en el estado de cuenta”.\n- No inventes ni calcules más allá de lo que aparece en el archivo.\n\nLo que vas a hacer es interactuar con el usuario de manera amable y responder a su solicitudes que te vaya haciendo \n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        912,
+        -144
+      ],
+      "id": "6fda7e54-ff54-4f86-b8b3-28db60e53b5a",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        800,
+        112
+      ],
+      "id": "9d728c8c-4c44-41f9-9ae3-ee30d2fdf1f9",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "OwpXfy2xZXTL4IFI",
+          "name": "OpenAi account - soporte@valtmx.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "public": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        48,
+        -144
+      ],
+      "id": "d161a903-ec57-46a8-b8c9-e852062d80bd",
+      "name": "When chat message received",
+      "webhookId": "c4ff77dc-8052-40e9-9bb7-d753f451aa0d",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        512,
+        -144
+      ],
+      "id": "e95a83d4-6cd6-4434-b2fc-c67ce32b16e7",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c9a4ff35-89fc-417c-8c21-663cd567bb71",
+              "name": "Extracted PDF Text",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        720,
+        -144
+      ],
+      "id": "32d8776f-4eb8-4286-83f4-e0a1aee28335",
+      "name": "Edit Fields"
+    }
+  ],
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "shared": [
+    {
+      "updatedAt": "2025-12-15T18:16:13.421Z",
+      "createdAt": "2025-12-15T18:16:13.421Z",
+      "role": "workflow:owner",
+      "workflowId": "wt7JZdNq6DZhzgHX",
+      "projectId": "K3qTwdhfsN7M0hmd"
+    }
+  ],
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-12-15T19:06:05.169Z",
+  "versionId": "34840e01-7943-4368-98cf-4631943247c2"
+}
