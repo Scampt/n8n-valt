@@ -1,0 +1,261 @@
+{
+  "active": false,
+  "activeVersion": null,
+  "activeVersionId": null,
+  "connections": {
+    "Lista de emails": {
+      "main": [
+        [
+          {
+            "node": "Separar emails en items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ejecutar sincronización manual": {
+      "main": [
+        [
+          {
+            "node": "Lista de emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separar emails en items": {
+      "main": [
+        [
+          {
+            "node": "Buscar item por email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar item por email": {
+      "main": [
+        [
+          {
+            "node": "¿Item existe en Monday?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Item existe en Monday?": {
+      "main": [
+        [
+          {
+            "node": "Normalizar datos del item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar datos del item": {
+      "main": [
+        [
+          {
+            "node": "Actualizar contacto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-12-15T18:17:22.167Z",
+  "id": "mKWVSrIlZ01qiDqT",
+  "isArchived": false,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "name": "Mailchimp | Sync contactos desde Monday (por email)",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "834749ae-f6b4-4b24-917b-d75db9f58426",
+              "name": "Email",
+              "value": "\"rubechahuaya@gmail.com\",     \"chilitotostado@hotmail.com\",     \"alfreditoo.ac2003@gmail.com\",     \"alejandro.lopezbs@outlook.com\",     \"enmanuel14em@gmail.com\",     \"alanthcruz3@gmail.com\",     \"angelo.dlc.1406@gmail.com\",     \"encabezado.certeza6t@icloud.com\",     \"angelfpereztuy@gmail.com\",     \"leonardomapv@gmail.com\",     \"tiagovil08@gmail.com\",     \"lobatocfdi@gmail.com\",     \"glenncortessalas@gmail.com\",     \"santivallar1@gmail.com\",     \"jorg.garc.17@gmail.com\",     \"josuedanielceltun1@gmail.com\",     \"daniel.cooins@gmail.com\",     \"brucevalentin.bv@gmail.com\",     \"cecruzmo@gmail.com\",     \"galogf2501@gmail.com\",     \"abg.fernandoaguilar@outlook.com\",     \"dilanu212@outlook.com\",     \"angellugardo708@gmail.com\"",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -464,
+        144
+      ],
+      "id": "442d4f05-1e53-40ed-8d03-4f7c535595de",
+      "name": "Lista de emails"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -672,
+        144
+      ],
+      "id": "26c9e5ca-7d26-4418-90e7-2e4dcd44388c",
+      "name": "Ejecutar sincronización manual"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.Email;\n\n// limpiar comillas y espacios\nconst emails = raw\n  .replace(/\"/g, \"\")\n  .split(\",\")\n  .map(e => e.trim())\n  .filter(e => e.length > 0);\n\nreturn emails.map(email => ({\n  json: { email }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -256,
+        144
+      ],
+      "id": "0fca7275-d0f0-411b-8ef5-ad0aac1e20f8",
+      "name": "Separar emails en items"
+    },
+    {
+      "parameters": {
+        "resource": "boardItem",
+        "operation": "getByColumnValue",
+        "boardId": "18379463302",
+        "columnId": "emailt7ajh67p",
+        "columnValue": "={{ $json.email }}",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.mondayCom",
+      "typeVersion": 1,
+      "position": [
+        16,
+        144
+      ],
+      "id": "13a6087a-b069-45e7-ae9c-80038b2d8d0e",
+      "name": "Buscar item por email",
+      "credentials": {
+        "mondayComApi": {
+          "id": "jq04ZaznQx8nOr7b",
+          "name": "Monday.com - Valtmx account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "22767734-c8a3-49bf-988c-f747370ab831",
+              "leftValue": "={{ $json.column_values[1].text }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        144
+      ],
+      "id": "187784da-635a-422e-8a01-993d1967e3ba",
+      "name": "¿Item existe en Monday?"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const data = item.json;\n\n  const fullName = (data.name || \"\").trim();\n  const email = data.column_values?.[1]?.text || \"\";\n  const phone = data.column_values?.[2]?.text || \"\";\n\n  let firstName = \"\";\n  let lastName = \"\";\n\n  if (fullName) {\n    const parts = fullName.split(/\\s+/);\n    firstName = parts.shift();\n    lastName = parts.join(\" \");\n  }\n\n  return {\n    json: {\n      email,\n      firstName,\n      lastName,\n      phone,\n      itemId: data.id\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        48
+      ],
+      "id": "69a0f3c5-99be-4f5e-996f-1421b8cbd2e2",
+      "name": "Normalizar datos del item"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "list": "23892773fe",
+        "email": "={{ $json.email }}",
+        "updateFields": {
+          "mergeFieldsUi": {
+            "mergeFieldsValues": [
+              {
+                "name": "FNAME",
+                "value": "={{ $json.firstName }}"
+              },
+              {
+                "name": "LNAME",
+                "value": "={{ $json.lastName }}"
+              },
+              {
+                "name": "PHONE",
+                "value": "={{ $json.phone }}"
+              },
+              {
+                "name": "MMERGE5",
+                "value": "={{ $json.itemId }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.mailchimp",
+      "typeVersion": 1,
+      "position": [
+        704,
+        48
+      ],
+      "id": "7925e4ce-6b0f-4bf7-a343-b52666e3281c",
+      "name": "Actualizar contacto",
+      "credentials": {
+        "mailchimpApi": {
+          "id": "ZvQ2gB3ooBMFb7Xh",
+          "name": "Mailchimp - Armario de caballero account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "shared": [
+    {
+      "updatedAt": "2025-12-15T18:17:22.171Z",
+      "createdAt": "2025-12-15T18:17:22.171Z",
+      "role": "workflow:owner",
+      "workflowId": "mKWVSrIlZ01qiDqT",
+      "projectId": "K3qTwdhfsN7M0hmd"
+    }
+  ],
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-12-15T18:52:35.504Z",
+  "versionId": "07ff384d-97c2-41f9-b410-77804894c34b"
+}
