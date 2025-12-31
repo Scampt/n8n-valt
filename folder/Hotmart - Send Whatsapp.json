@@ -1,0 +1,307 @@
+{
+  "active": false,
+  "activeVersion": null,
+  "activeVersionId": null,
+  "connections": {
+    "Whatsapp Inbound": {
+      "main": [
+        [
+          {
+            "node": "Obtener datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener datos": {
+      "main": [
+        [
+          {
+            "node": "Valores Monday",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valores Monday": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "WA 1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "WA 2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "WA 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-12-15T18:17:05.418Z",
+  "id": "381dBeUE3BQZUv68",
+  "isArchived": false,
+  "meta": null,
+  "name": "Hotmart - Send Whatsapp",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-inbound",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -960,
+        144
+      ],
+      "id": "553f6983-0245-484b-807a-c27f8b485502",
+      "name": "Whatsapp Inbound",
+      "webhookId": "10d24bd5-1fcc-4bac-ad76-319af5bf8d4c"
+    },
+    {
+      "parameters": {
+        "resource": "boardItem",
+        "operation": "get",
+        "itemId": "={{ $json.body.event.pulseId.toString() }}"
+      },
+      "type": "n8n-nodes-base.mondayCom",
+      "typeVersion": 1,
+      "position": [
+        -736,
+        144
+      ],
+      "id": "ba2558d9-9fc4-42ab-9ea6-2da68b5381dd",
+      "name": "Obtener datos",
+      "credentials": {
+        "mondayComApi": {
+          "id": "jq04ZaznQx8nOr7b",
+          "name": "Monday.com - Valtmx account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4bf8ca5b-1f12-4771-8f3c-a6f6086ac043",
+              "name": "Nombre",
+              "value": "={{ $('Obtener datos').item.json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "916df879-74f7-40ba-866b-2cb7894289ec",
+              "name": "Teléfono",
+              "value": "={{ $json.column_values[2].text }}",
+              "type": "string"
+            },
+            {
+              "id": "e5826049-a211-45d3-87e2-162bc42493b4",
+              "name": "Email",
+              "value": "={{ $json.column_values[1].text }}",
+              "type": "string"
+            },
+            {
+              "id": "4ff50e0a-e22f-438b-b685-c77cacce1353",
+              "name": "Estado Email",
+              "value": "={{ $json.column_values[6].text }}",
+              "type": "string"
+            },
+            {
+              "id": "1d0ea039-5665-45f4-a99d-df7fe0d3100f",
+              "name": "Estado WhatsApp",
+              "value": "={{ $json.column_values[7].text }}",
+              "type": "string"
+            },
+            {
+              "id": "64c8aea8-d938-4c0b-9ebd-5c497aeaa16e",
+              "name": "Item ID",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -512,
+        144
+      ],
+      "id": "c193f1ba-9616-49d3-8b73-4ca616e82e2b",
+      "name": "Valores Monday"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json[\"Estado WhatsApp\"] }}",
+                    "rightValue": "Whatsapp 1 enviado",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "5a705b6d-264e-429c-ac82-da3bb4a5faf6"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Whatsapp 1"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "78895556-d10c-4201-ad17-f06148ad993a",
+                    "leftValue": "={{ $json[\"Estado WhatsApp\"] }}",
+                    "rightValue": "Whatsapp 2 enviado",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Whatsapp 2"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "4770d5a2-57d7-40ab-af73-2cba97658586",
+                    "leftValue": "={{ $json[\"Estado WhatsApp\"] }}",
+                    "rightValue": "Whatsapp 3 enviado",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Whatsapp 3"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -288,
+        128
+      ],
+      "id": "45107848-78c9-486c-862f-1e6f5de68e9f",
+      "name": "Switch"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -64,
+        -48
+      ],
+      "id": "00bc31f7-1721-4b1c-8d74-703283733246",
+      "name": "WA 1",
+      "webhookId": "f5d4ee02-ad4d-4d97-a464-625141739b38"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -64,
+        144
+      ],
+      "id": "82388432-bea0-4dbd-bd14-bc4214879a92",
+      "name": "WA 2",
+      "webhookId": "f5d4ee02-ad4d-4d97-a464-625141739b38"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -64,
+        336
+      ],
+      "id": "3c55a4da-bf04-4b13-b27c-577f5020c3eb",
+      "name": "WA 3",
+      "webhookId": "f5d4ee02-ad4d-4d97-a464-625141739b38"
+    }
+  ],
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "shared": [
+    {
+      "updatedAt": "2025-12-15T18:17:05.422Z",
+      "createdAt": "2025-12-15T18:17:05.422Z",
+      "role": "workflow:owner",
+      "workflowId": "381dBeUE3BQZUv68",
+      "projectId": "K3qTwdhfsN7M0hmd"
+    }
+  ],
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-12-15T18:52:59.159Z",
+  "versionId": "5e21f0ce-acac-47c4-ad51-57834f25fdf8"
+}
