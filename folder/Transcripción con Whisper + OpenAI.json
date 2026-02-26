@@ -1,170 +1,16 @@
 {
   "active": true,
   "activeVersion": {
-    "updatedAt": "2025-12-15T19:06:48.000Z",
-    "createdAt": "2025-12-15T19:06:47.219Z",
-    "versionId": "8a3fffb1-2171-417e-babc-1f458466424a",
-    "workflowId": "v0GixVEVkl0mIt1U",
-    "nodes": [
-      {
-        "parameters": {
-          "public": true,
-          "initialMessages": "Porfavor. Adjunta tu audio para transcribirlo 🤖",
-          "options": {
-            "allowFileUploads": true,
-            "allowedFilesMimeTypes": ".mp3, m4a, .wav, .ogg",
-            "subtitle": "Estoy aquí para ayudarte a realizar transcripciónes de audio 🎵",
-            "title": "Hola que tal! 👋",
-            "responseMode": "responseNodes"
-          }
-        },
-        "type": "@n8n/n8n-nodes-langchain.chatTrigger",
-        "typeVersion": 1.3,
-        "position": [
-          0,
-          0
-        ],
-        "id": "40a2f264-e7c9-4f7e-87a9-fc5fd673e01e",
-        "name": "Primera interacción",
-        "webhookId": "1ae1f24f-5bb0-4699-a059-c7afca7715cc"
-      },
-      {
-        "parameters": {
-          "method": "POST",
-          "url": "http://195.35.8.205:5000/transcribe",
-          "sendBody": true,
-          "contentType": "multipart-form-data",
-          "bodyParameters": {
-            "parameters": [
-              {
-                "parameterType": "formBinaryData",
-                "name": "file",
-                "inputDataFieldName": "={{ Object.keys($binary)[0] }}"
-              }
-            ]
-          },
-          "options": {}
-        },
-        "type": "n8n-nodes-base.httpRequest",
-        "typeVersion": 4.3,
-        "position": [
-          656,
-          16
-        ],
-        "id": "3c5d4ad4-3dfe-4afc-9fe3-289dfb03a125",
-        "name": "Conexión con Whisper.py"
-      },
-      {
-        "parameters": {
-          "message": "={{ $json.output }}",
-          "options": {}
-        },
-        "type": "@n8n/n8n-nodes-langchain.chat",
-        "typeVersion": 1,
-        "position": [
-          1248,
-          16
-        ],
-        "id": "9ac67f2e-baed-4c48-b3e4-9cc9b89a48c6",
-        "name": "Responder interacción"
-      },
-      {
-        "parameters": {
-          "model": {
-            "__rl": true,
-            "value": "gpt-4o-mini",
-            "mode": "list",
-            "cachedResultName": "gpt-4o-mini"
-          },
-          "options": {}
-        },
-        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-        "typeVersion": 1.2,
-        "position": [
-          800,
-          240
-        ],
-        "id": "a2b22a33-b18a-409c-96e5-50bcabaec8cf",
-        "name": "OpenAI Chat Model",
-        "credentials": {
-          "openAiApi": {
-            "id": "OwpXfy2xZXTL4IFI",
-            "name": "OpenAi account - soporte@valtmx.com"
-          }
-        }
-      },
-      {
-        "parameters": {
-          "promptType": "define",
-          "text": "={{ $json[\"text\"] }}",
-          "options": {
-            "systemMessage": "Eres un asistente lingüístico experto en mejorar transcripciones de audio.\n\nTu tarea consiste en:\n1. Corregir errores de ortografía, puntuación y gramática.\n2. Aclarar frases ambiguas o entrecortadas para que el texto sea fluido.\n3. Mantener el significado y tono original del hablante.\n4. Si el texto incluye frases en otro idioma, tradúcelas al español respetando el contexto.\n5. No inventes información ni cambies el sentido del mensaje.\n6. Devuelve únicamente el texto limpio, sin comentarios adicionales."
-          }
-        },
-        "type": "@n8n/n8n-nodes-langchain.agent",
-        "typeVersion": 3,
-        "position": [
-          880,
-          16
-        ],
-        "id": "c331be66-79aa-4b76-94dd-cb667e3e2b24",
-        "name": "Mejorar transcripción"
-      },
-      {
-        "parameters": {
-          "options": {}
-        },
-        "type": "n8n-nodes-base.splitInBatches",
-        "typeVersion": 3,
-        "position": [
-          240,
-          0
-        ],
-        "id": "b1b975ca-19f6-462e-a354-36b0dadb573f",
-        "name": "Loop Over Items"
-      }
-    ],
+    "authors": "Kevin Quiroz",
+    "autosaved": false,
     "connections": {
-      "Primera interacción": {
-        "main": [
-          [
-            {
-              "node": "Loop Over Items",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
       "Conexión con Whisper.py": {
         "main": [
           [
             {
+              "index": 0,
               "node": "Mejorar transcripción",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "OpenAI Chat Model": {
-        "ai_languageModel": [
-          [
-            {
-              "node": "Mejorar transcripción",
-              "type": "ai_languageModel",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Mejorar transcripción": {
-        "main": [
-          [
-            {
-              "node": "Responder interacción",
-              "type": "main",
-              "index": 0
+              "type": "main"
             }
           ]
         ]
@@ -174,60 +20,182 @@
           [],
           [
             {
+              "index": 0,
               "node": "Conexión con Whisper.py",
-              "type": "main",
-              "index": 0
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Mejorar transcripción": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Responder interacción",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "OpenAI Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "index": 0,
+              "node": "Mejorar transcripción",
+              "type": "ai_languageModel"
+            }
+          ]
+        ]
+      },
+      "Primera interacción": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Loop Over Items",
+              "type": "main"
             }
           ]
         ]
       }
     },
-    "authors": "Kevin Quiroz",
+    "createdAt": "2025-12-15T19:06:47.219Z",
+    "description": "",
     "name": "Version 8a3fffb1",
-    "description": ""
+    "nodes": [
+      {
+        "id": "40a2f264-e7c9-4f7e-87a9-fc5fd673e01e",
+        "name": "Primera interacción",
+        "parameters": {
+          "initialMessages": "Porfavor. Adjunta tu audio para transcribirlo 🤖",
+          "options": {
+            "allowFileUploads": true,
+            "allowedFilesMimeTypes": ".mp3, m4a, .wav, .ogg",
+            "responseMode": "responseNodes",
+            "subtitle": "Estoy aquí para ayudarte a realizar transcripciónes de audio 🎵",
+            "title": "Hola que tal! 👋"
+          },
+          "public": true
+        },
+        "position": [
+          0,
+          0
+        ],
+        "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+        "typeVersion": 1.3,
+        "webhookId": "1ae1f24f-5bb0-4699-a059-c7afca7715cc"
+      },
+      {
+        "id": "3c5d4ad4-3dfe-4afc-9fe3-289dfb03a125",
+        "name": "Conexión con Whisper.py",
+        "parameters": {
+          "bodyParameters": {
+            "parameters": [
+              {
+                "inputDataFieldName": "={{ Object.keys($binary)[0] }}",
+                "name": "file",
+                "parameterType": "formBinaryData"
+              }
+            ]
+          },
+          "contentType": "multipart-form-data",
+          "method": "POST",
+          "options": {},
+          "sendBody": true,
+          "url": "http://195.35.8.205:5000/transcribe"
+        },
+        "position": [
+          656,
+          16
+        ],
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.3
+      },
+      {
+        "id": "9ac67f2e-baed-4c48-b3e4-9cc9b89a48c6",
+        "name": "Responder interacción",
+        "parameters": {
+          "message": "={{ $json.output }}",
+          "options": {}
+        },
+        "position": [
+          1248,
+          16
+        ],
+        "type": "@n8n/n8n-nodes-langchain.chat",
+        "typeVersion": 1
+      },
+      {
+        "credentials": {
+          "openAiApi": {
+            "id": "OwpXfy2xZXTL4IFI",
+            "name": "OpenAi account - soporte@valtmx.com"
+          }
+        },
+        "id": "a2b22a33-b18a-409c-96e5-50bcabaec8cf",
+        "name": "OpenAI Chat Model",
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "cachedResultName": "gpt-4o-mini",
+            "mode": "list",
+            "value": "gpt-4o-mini"
+          },
+          "options": {}
+        },
+        "position": [
+          800,
+          240
+        ],
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.2
+      },
+      {
+        "id": "c331be66-79aa-4b76-94dd-cb667e3e2b24",
+        "name": "Mejorar transcripción",
+        "parameters": {
+          "options": {
+            "systemMessage": "Eres un asistente lingüístico experto en mejorar transcripciones de audio.\n\nTu tarea consiste en:\n1. Corregir errores de ortografía, puntuación y gramática.\n2. Aclarar frases ambiguas o entrecortadas para que el texto sea fluido.\n3. Mantener el significado y tono original del hablante.\n4. Si el texto incluye frases en otro idioma, tradúcelas al español respetando el contexto.\n5. No inventes información ni cambies el sentido del mensaje.\n6. Devuelve únicamente el texto limpio, sin comentarios adicionales."
+          },
+          "promptType": "define",
+          "text": "={{ $json[\"text\"] }}"
+        },
+        "position": [
+          880,
+          16
+        ],
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3
+      },
+      {
+        "id": "b1b975ca-19f6-462e-a354-36b0dadb573f",
+        "name": "Loop Over Items",
+        "parameters": {
+          "options": {}
+        },
+        "position": [
+          240,
+          0
+        ],
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3
+      }
+    ],
+    "updatedAt": "2025-12-15T19:06:48.000Z",
+    "versionId": "8a3fffb1-2171-417e-babc-1f458466424a",
+    "workflowId": "v0GixVEVkl0mIt1U"
   },
   "activeVersionId": "8a3fffb1-2171-417e-babc-1f458466424a",
   "connections": {
-    "Primera interacción": {
-      "main": [
-        [
-          {
-            "node": "Loop Over Items",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Conexión con Whisper.py": {
       "main": [
         [
           {
+            "index": 0,
             "node": "Mejorar transcripción",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "OpenAI Chat Model": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Mejorar transcripción",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Mejorar transcripción": {
-      "main": [
-        [
-          {
-            "node": "Responder interacción",
-            "type": "main",
-            "index": 0
+            "type": "main"
           }
         ]
       ]
@@ -237,9 +205,42 @@
         [],
         [
           {
+            "index": 0,
             "node": "Conexión con Whisper.py",
-            "type": "main",
-            "index": 0
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Mejorar transcripción": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Responder interacción",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "index": 0,
+            "node": "Mejorar transcripción",
+            "type": "ai_languageModel"
+          }
+        ]
+      ]
+    },
+    "Primera interacción": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Loop Over Items",
+            "type": "main"
           }
         ]
       ]
@@ -254,121 +255,121 @@
   "name": "Transcripción con Whisper + OpenAI",
   "nodes": [
     {
+      "id": "40a2f264-e7c9-4f7e-87a9-fc5fd673e01e",
+      "name": "Primera interacción",
       "parameters": {
-        "public": true,
         "initialMessages": "Porfavor. Adjunta tu audio para transcribirlo 🤖",
         "options": {
           "allowFileUploads": true,
           "allowedFilesMimeTypes": ".mp3, m4a, .wav, .ogg",
+          "responseMode": "responseNodes",
           "subtitle": "Estoy aquí para ayudarte a realizar transcripciónes de audio 🎵",
-          "title": "Hola que tal! 👋",
-          "responseMode": "responseNodes"
-        }
+          "title": "Hola que tal! 👋"
+        },
+        "public": true
       },
-      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
-      "typeVersion": 1.3,
       "position": [
         0,
         0
       ],
-      "id": "40a2f264-e7c9-4f7e-87a9-fc5fd673e01e",
-      "name": "Primera interacción",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
       "webhookId": "1ae1f24f-5bb0-4699-a059-c7afca7715cc"
     },
     {
+      "id": "3c5d4ad4-3dfe-4afc-9fe3-289dfb03a125",
+      "name": "Conexión con Whisper.py",
       "parameters": {
-        "method": "POST",
-        "url": "http://195.35.8.205:5000/transcribe",
-        "sendBody": true,
-        "contentType": "multipart-form-data",
         "bodyParameters": {
           "parameters": [
             {
-              "parameterType": "formBinaryData",
+              "inputDataFieldName": "={{ Object.keys($binary)[0] }}",
               "name": "file",
-              "inputDataFieldName": "={{ Object.keys($binary)[0] }}"
+              "parameterType": "formBinaryData"
             }
           ]
         },
-        "options": {}
+        "contentType": "multipart-form-data",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "url": "http://195.35.8.205:5000/transcribe"
       },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
       "position": [
         656,
         16
       ],
-      "id": "3c5d4ad4-3dfe-4afc-9fe3-289dfb03a125",
-      "name": "Conexión con Whisper.py"
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3
     },
     {
+      "id": "9ac67f2e-baed-4c48-b3e4-9cc9b89a48c6",
+      "name": "Responder interacción",
       "parameters": {
         "message": "={{ $json.output }}",
         "options": {}
       },
-      "type": "@n8n/n8n-nodes-langchain.chat",
-      "typeVersion": 1,
       "position": [
         1248,
         16
       ],
-      "id": "9ac67f2e-baed-4c48-b3e4-9cc9b89a48c6",
-      "name": "Responder interacción"
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1
     },
     {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "gpt-4o-mini",
-          "mode": "list",
-          "cachedResultName": "gpt-4o-mini"
-        },
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        800,
-        240
-      ],
-      "id": "a2b22a33-b18a-409c-96e5-50bcabaec8cf",
-      "name": "OpenAI Chat Model",
       "credentials": {
         "openAiApi": {
           "id": "OwpXfy2xZXTL4IFI",
           "name": "OpenAi account - soporte@valtmx.com"
         }
-      }
+      },
+      "id": "a2b22a33-b18a-409c-96e5-50bcabaec8cf",
+      "name": "OpenAI Chat Model",
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "cachedResultName": "gpt-4o-mini",
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "position": [
+        800,
+        240
+      ],
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2
     },
     {
+      "id": "c331be66-79aa-4b76-94dd-cb667e3e2b24",
+      "name": "Mejorar transcripción",
       "parameters": {
-        "promptType": "define",
-        "text": "={{ $json[\"text\"] }}",
         "options": {
           "systemMessage": "Eres un asistente lingüístico experto en mejorar transcripciones de audio.\n\nTu tarea consiste en:\n1. Corregir errores de ortografía, puntuación y gramática.\n2. Aclarar frases ambiguas o entrecortadas para que el texto sea fluido.\n3. Mantener el significado y tono original del hablante.\n4. Si el texto incluye frases en otro idioma, tradúcelas al español respetando el contexto.\n5. No inventes información ni cambies el sentido del mensaje.\n6. Devuelve únicamente el texto limpio, sin comentarios adicionales."
-        }
+        },
+        "promptType": "define",
+        "text": "={{ $json[\"text\"] }}"
       },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 3,
       "position": [
         880,
         16
       ],
-      "id": "c331be66-79aa-4b76-94dd-cb667e3e2b24",
-      "name": "Mejorar transcripción"
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3
     },
     {
+      "id": "b1b975ca-19f6-462e-a354-36b0dadb573f",
+      "name": "Loop Over Items",
       "parameters": {
         "options": {}
       },
-      "type": "n8n-nodes-base.splitInBatches",
-      "typeVersion": 3,
       "position": [
         240,
         0
       ],
-      "id": "b1b975ca-19f6-462e-a354-36b0dadb573f",
-      "name": "Loop Over Items"
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3
     }
   ],
   "pinData": {},
@@ -377,20 +378,20 @@
   },
   "shared": [
     {
-      "updatedAt": "2025-12-15T18:15:49.915Z",
       "createdAt": "2025-12-15T18:15:49.915Z",
+      "projectId": "K3qTwdhfsN7M0hmd",
       "role": "workflow:owner",
-      "workflowId": "v0GixVEVkl0mIt1U",
-      "projectId": "K3qTwdhfsN7M0hmd"
+      "updatedAt": "2025-12-15T18:15:49.915Z",
+      "workflowId": "v0GixVEVkl0mIt1U"
     }
   ],
   "staticData": null,
   "tags": [
     {
-      "updatedAt": "2025-12-15T19:06:39.548Z",
       "createdAt": "2025-12-15T19:06:39.548Z",
       "id": "hr4LyOAFQsIqylpJ",
-      "name": "terminal setup"
+      "name": "terminal setup",
+      "updatedAt": "2025-12-15T19:06:39.548Z"
     }
   ],
   "triggerCount": 1,
