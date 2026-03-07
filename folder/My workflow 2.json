@@ -1,0 +1,84 @@
+{
+  "active": false,
+  "activeVersion": null,
+  "activeVersionId": null,
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Get many messages",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2026-03-06T06:06:36.228Z",
+  "id": "W5b4gp2Jz8DkJRzS",
+  "isArchived": false,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "id": "8e83feae-2bde-4314-86ad-79e3cfcc6107",
+      "name": "When clicking ‘Execute workflow’",
+      "parameters": {},
+      "position": [
+        0,
+        0
+      ],
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1
+    },
+    {
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "l89KymVoaUnd4ct7",
+          "name": "luis.kevin.quiroz - Gmail"
+        }
+      },
+      "id": "1be468d2-9265-470e-8c6c-e186d626649f",
+      "name": "Get many messages",
+      "parameters": {
+        "filters": {
+          "labelIds": [
+            "Label_2392782401024701446"
+          ]
+        },
+        "operation": "getAll",
+        "returnAll": true
+      },
+      "position": [
+        368,
+        0
+      ],
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "webhookId": "4c595eb2-2b67-4d4c-8a61-e80e38761dbc"
+    }
+  ],
+  "pinData": {},
+  "settings": {
+    "availableInMCP": false,
+    "binaryMode": "separate",
+    "executionOrder": "v1"
+  },
+  "shared": [
+    {
+      "createdAt": "2026-03-06T06:06:36.232Z",
+      "projectId": "K3qTwdhfsN7M0hmd",
+      "role": "workflow:owner",
+      "updatedAt": "2026-03-06T06:06:36.232Z",
+      "workflowId": "W5b4gp2Jz8DkJRzS"
+    }
+  ],
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2026-03-06T06:06:56.403Z",
+  "versionId": "e80e98d8-9bfe-4a8e-b84d-6c3021be0771"
+}
