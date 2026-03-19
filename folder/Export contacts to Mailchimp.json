@@ -1,0 +1,554 @@
+{
+  "active": true,
+  "activeVersion": {
+    "authors": "Kevin Quiroz",
+    "autosaved": true,
+    "connections": {
+      "Extraer Item ID": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Obtener item completo",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Generar hash mailchimp": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Mailchimp UPSERT",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Mailchimp UPSERT": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Respond to Webhook",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Normalizar datos": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "¿Tiene email?",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Obtener item completo": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Normalizar datos",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Webhook": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Extraer Item ID",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "¿Tiene email?": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Generar hash mailchimp",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "Respond to Webhook",
+              "type": "main"
+            }
+          ]
+        ]
+      }
+    },
+    "createdAt": "2026-03-18T20:29:31.634Z",
+    "description": "",
+    "name": "Version aef4e7dc",
+    "nodes": [
+      {
+        "id": "65502217-e5e6-4d3b-a608-cef405b84649",
+        "name": "Webhook",
+        "parameters": {
+          "httpMethod": "POST",
+          "options": {},
+          "path": "monday-mailchimp-upsert",
+          "responseMode": "responseNode"
+        },
+        "position": [
+          0,
+          0
+        ],
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "webhookId": "a7f5655e-5df2-4c91-8288-8a725344b489"
+      },
+      {
+        "id": "788f5be1-0b7b-40cb-9c6f-00ebc53a15f0",
+        "name": "Extraer Item ID",
+        "parameters": {
+          "jsCode": "const body = $json.body || $json;\n\nconst itemId =\n  body.itemId ||\n  body.pulseId ||\n  body.event?.itemId ||\n  body.event?.pulseId ||\n  body.inputFields?.itemId ||\n  body.inputFields?.pulseId ||\n  body.item?.id ||\n  \"\";\n\nconst boardId =\n  body.boardId ||\n  body.event?.boardId ||\n  body.inputFields?.boardId ||\n  \"\";\n\nreturn [\n  {\n    json: {\n      itemId: String(itemId),\n      boardId: String(boardId)\n    }\n  }\n];"
+        },
+        "position": [
+          208,
+          0
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "credentials": {
+          "mondayComApi": {
+            "id": "jq04ZaznQx8nOr7b",
+            "name": "Monday.com - Valtmx account"
+          }
+        },
+        "id": "bd7c3681-bb4c-436f-9bbd-b209ea386a66",
+        "name": "Obtener item completo",
+        "parameters": {
+          "itemId": "={{ $json.itemId }}",
+          "operation": "get",
+          "resource": "boardItem"
+        },
+        "position": [
+          416,
+          0
+        ],
+        "type": "n8n-nodes-base.mondayCom",
+        "typeVersion": 1
+      },
+      {
+        "id": "b972f318-4381-48a9-bcb9-8f939b668ec0",
+        "name": "Normalizar datos",
+        "parameters": {
+          "jsCode": "const item = $json;\n\n// Normaliza texto\nfunction normalizeText(str) {\n  return String(str || \"\")\n    .normalize(\"NFD\")\n    .replace(/[\\u0300-\\u036f]/g, \"\")\n    .toLowerCase()\n    .trim();\n}\n\n// Busca columna por type, title o id\nfunction findColumn(cols, { types = [], titleIncludes = [], idIncludes = [] }) {\n  return (cols || []).find((c) => {\n    const type = normalizeText(c.type);\n    const title = normalizeText(c.column?.title);\n    const id = normalizeText(c.id);\n\n    const typeMatch = types.some((t) => type === normalizeText(t));\n    const titleMatch = titleIncludes.some((t) => title.includes(normalizeText(t)));\n    const idMatch = idIncludes.some((t) => id.includes(normalizeText(t)));\n\n    return typeMatch || titleMatch || idMatch;\n  });\n}\n\nfunction parseColumnValue(col) {\n  if (!col || !col.value) return null;\n\n  try {\n    return JSON.parse(col.value);\n  } catch {\n    return col.value;\n  }\n}\n\nconst cols = item.column_values || [];\n\n// EMAIL\nconst emailCol = findColumn(cols, {\n  types: [\"email\"],\n  titleIncludes: [\"email\", \"e-mail\", \"correo\", \"mail\"],\n  idIncludes: [\"email\", \"mail\"]\n});\n\nconst emailParsed = parseColumnValue(emailCol);\n\nlet email = \"\";\nif (emailParsed && typeof emailParsed === \"object\" && emailParsed.email) {\n  email = emailParsed.email;\n} else if (emailCol?.text) {\n  email = emailCol.text;\n}\n\nemail = String(email || \"\").trim().toLowerCase();\n\nconst emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\nif (!emailRegex.test(email)) {\n  email = \"\";\n}\n\n// PHONE\nconst phoneCol = findColumn(cols, {\n  types: [\"phone\"],\n  titleIncludes: [\"telefono\", \"teléfono\", \"tel\", \"phone\", \"whatsapp\", \"celular\", \"movil\", \"móvil\"],\n  idIncludes: [\"phone\", \"telefono\", \"tel\", \"whatsapp\", \"cel\"]\n});\n\nconst phoneParsed = parseColumnValue(phoneCol);\n\nlet phone = \"\";\nif (phoneParsed && typeof phoneParsed === \"object\" && phoneParsed.phone) {\n  phone = phoneParsed.phone;\n} else if (phoneCol?.text) {\n  phone = phoneCol.text;\n}\n\nphone = String(phone || \"\").replace(/[^\\d+]/g, \"\");\n\n// NAME\nconst rawName = String(item.name || \"\").trim();\nconst parts = rawName.split(/\\s+/).filter(Boolean);\n\nconst firstName = parts.shift() || \"\";\nconst lastName = parts.join(\" \");\n\nreturn [\n  {\n    json: {\n      email,\n      phone,\n      firstName,\n      lastName,\n      itemId: String(item.id || \"\")\n    }\n  }\n];"
+        },
+        "position": [
+          624,
+          0
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "id": "ed7e857b-8ec8-4985-b06b-251e3abf373e",
+        "name": "¿Tiene email?",
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "83d1be3f-2c94-402e-91ff-d6dfaea9e3a3",
+                "leftValue": "={{ $json.email }}",
+                "operator": {
+                  "operation": "notEmpty",
+                  "singleValue": true,
+                  "type": "string"
+                },
+                "rightValue": ""
+              }
+            ],
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            }
+          },
+          "options": {}
+        },
+        "position": [
+          832,
+          0
+        ],
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3
+      },
+      {
+        "id": "c7314156-a7f0-4923-a0c9-31e21181a998",
+        "name": "Generar hash mailchimp",
+        "parameters": {
+          "jsCode": "function md5(str) {\n  function L(k, d) { return (k << d) | (k >>> (32 - d)); }\n  function K(G, k) {\n    let I, d, F, H, x;\n    F = G & 2147483648;\n    H = k & 2147483648;\n    I = G & 1073741824;\n    d = k & 1073741824;\n    x = (G & 1073741823) + (k & 1073741823);\n    if (I & d) return x ^ 2147483648 ^ F ^ H;\n    if (I | d) {\n      if (x & 1073741824) return x ^ 3221225472 ^ F ^ H;\n      return x ^ 1073741824 ^ F ^ H;\n    }\n    return x ^ F ^ H;\n  }\n  function r(d, F, k) { return (d & F) | (~d & k); }\n  function q(d, F, k) { return (d & k) | (F & ~k); }\n  function p(d, F, k) { return d ^ F ^ k; }\n  function n(d, F, k) { return F ^ (d | ~k); }\n  function u(G, F, aa, Z, k, H, I) { G = K(G, K(K(r(F, aa, Z), k), I)); return K(L(G, H), F); }\n  function f(G, F, aa, Z, k, H, I) { G = K(G, K(K(q(F, aa, Z), k), I)); return K(L(G, H), F); }\n  function D(G, F, aa, Z, k, H, I) { G = K(G, K(K(p(F, aa, Z), k), I)); return K(L(G, H), F); }\n  function t(G, F, aa, Z, k, H, I) { G = K(G, K(K(n(F, aa, Z), k), I)); return K(L(G, H), F); }\n  function E(G) {\n    let Z, k = G.length, x = k + 8, I = (x - (x % 64)) / 64 + 1, aa = new Array(I * 16 - 1);\n    let d = 0, F = 0;\n    while (F < k) {\n      Z = (F - (F % 4)) / 4;\n      d = (F % 4) * 8;\n      aa[Z] = aa[Z] | (G.charCodeAt(F) << d);\n      F++;\n    }\n    Z = (F - (F % 4)) / 4;\n    d = (F % 4) * 8;\n    aa[Z] = aa[Z] | (128 << d);\n    aa[I * 16 - 2] = k << 3;\n    aa[I * 16 - 1] = k >>> 29;\n    return aa;\n  }\n  function B(x) {\n    let k = \"\", F = \"\", d;\n    for (d = 0; d <= 3; d++) {\n      F = (x >>> (d * 8)) & 255;\n      F = \"0\" + F.toString(16);\n      k += F.substr(F.length - 2, 2);\n    }\n    return k;\n  }\n  function J(G) {\n    G = G.replace(/\\r\\n/g, \"\\n\");\n    let d = \"\";\n    for (let F = 0; F < G.length; F++) {\n      let x = G.charCodeAt(F);\n      if (x < 128) d += String.fromCharCode(x);\n      else if (x < 2048) {\n        d += String.fromCharCode((x >> 6) | 192);\n        d += String.fromCharCode((x & 63) | 128);\n      } else {\n        d += String.fromCharCode((x >> 12) | 224);\n        d += String.fromCharCode(((x >> 6) & 63) | 128);\n        d += String.fromCharCode((x & 63) | 128);\n      }\n    }\n    return d;\n  }\n\n  let aa = [], G, F, k, Z, H, I, d, x;\n  str = J(str);\n  aa = E(str);\n  G = 1732584193;\n  F = 4023233417;\n  k = 2562383102;\n  Z = 271733878;\n\n  for (let o = 0; o < aa.length; o += 16) {\n    H = G; I = F; d = k; x = Z;\n    G = u(G, F, k, Z, aa[o + 0], 7, 3614090360);\n    Z = u(Z, G, F, k, aa[o + 1], 12, 3905402710);\n    F = u(F, Z, G, F, aa[o + 2], 17, 606105819);\n    k = u(k, F, Z, G, aa[o + 3], 22, 3250441966);\n    G = u(G, F, k, Z, aa[o + 4], 7, 4118548399);\n    Z = u(Z, G, F, k, aa[o + 5], 12, 1200080426);\n    F = u(F, Z, G, F, aa[o + 6], 17, 2821735955);\n    k = u(k, F, Z, G, aa[o + 7], 22, 4249261313);\n    G = f(G, F, k, Z, aa[o + 8], 7, 1770035416);\n    Z = f(Z, G, F, k, aa[o + 9], 12, 2336552879);\n    F = f(F, Z, G, F, aa[o + 10], 17, 4294925233);\n    k = f(k, F, Z, G, aa[o + 11], 22, 2304563134);\n    G = D(G, F, k, Z, aa[o + 12], 7, 1804603682);\n    Z = D(Z, G, F, k, aa[o + 13], 12, 4254626195);\n    F = D(F, Z, G, F, aa[o + 14], 17, 2792965006);\n    k = D(k, F, Z, G, aa[o + 15], 22, 1236535329);\n    G = t(G, F, k, Z, aa[o + 0], 7, 4129170786);\n    Z = t(Z, G, F, k, aa[o + 7], 12, 3225465664);\n    F = t(F, Z, G, F, aa[o + 14], 17, 643717713);\n    k = t(k, F, Z, G, aa[o + 5], 22, 3921069994);\n    G = t(G, F, k, Z, aa[o + 12], 7, 3593408605);\n    Z = t(Z, G, F, k, aa[o + 3], 12, 38016083);\n    F = t(F, Z, G, F, aa[o + 10], 17, 3634488961);\n    k = t(k, F, Z, G, aa[o + 1], 22, 3889429448);\n    G = t(G, F, k, Z, aa[o + 8], 7, 568446438);\n    Z = t(Z, G, F, k, aa[o + 15], 12, 3275163606);\n    F = t(F, Z, G, F, aa[o + 6], 17, 4107603335);\n    k = t(k, F, Z, G, aa[o + 13], 22, 1163531501);\n    G = K(G, H); F = K(F, I); k = K(k, d); Z = K(Z, x);\n  }\n\n  const email = String($json.email || '').trim().toLowerCase();\n\n  return [\n    {\n      json: {\n        ...$json,\n        subscriberHash: (B(G) + B(F) + B(k) + B(Z)).toLowerCase()\n      }\n    }\n  ];\n}\n\nreturn md5(String($json.email || '').trim().toLowerCase());"
+        },
+        "position": [
+          1120,
+          -128
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "credentials": {
+          "httpBasicAuth": {
+            "id": "BuXwnH7PzFWf6A83",
+            "name": "Mailchimp APIKey - Armario del caballero"
+          }
+        },
+        "id": "519c2409-68da-4b9a-b35a-e9dff7880746",
+        "maxTries": 5,
+        "name": "Mailchimp UPSERT",
+        "onError": "continueRegularOutput",
+        "parameters": {
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBasicAuth",
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "jsonBody": "={\n  \"email_address\": \"{{ $json.email }}\",\n  \"status_if_new\": \"subscribed\",\n  \"merge_fields\": {\n    \"FNAME\": \"{{ $json.firstName }}\",\n    \"LNAME\": \"{{ $json.lastName }}\",\n    \"PHONE\": \"{{ $json.phone }}\",\n    \"MMERGE5\": \"{{ $json.itemId }}\"\n  }\n}",
+          "method": "PUT",
+          "options": {},
+          "sendBody": true,
+          "sendHeaders": true,
+          "specifyBody": "json",
+          "url": "=https://us4.api.mailchimp.com/3.0/lists/23892773fe/members/{{ $json.subscriberHash }}"
+        },
+        "position": [
+          1360,
+          -128
+        ],
+        "retryOnFail": true,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "waitBetweenTries": 3000
+      },
+      {
+        "id": "05c1f47f-c225-482d-9cf5-6433679bbf73",
+        "name": "Respond to Webhook",
+        "parameters": {
+          "options": {
+            "responseCode": 200
+          },
+          "respondWith": "json",
+          "responseBody": "={\n  \"ok\": true,\n  \"synced\": true,\n  \"itemId\": \"={{ $json.itemId }}\"\n}"
+        },
+        "position": [
+          1664,
+          16
+        ],
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.5
+      }
+    ],
+    "updatedAt": "2026-03-18T20:30:33.000Z",
+    "versionId": "aef4e7dc-3d37-43de-bdfb-761a071e0367",
+    "workflowId": "2HfRV90oSXD7w1YO"
+  },
+  "activeVersionId": "aef4e7dc-3d37-43de-bdfb-761a071e0367",
+  "connections": {
+    "Extraer Item ID": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Obtener item completo",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Generar hash mailchimp": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Mailchimp UPSERT",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Mailchimp UPSERT": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Respond to Webhook",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Normalizar datos": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "¿Tiene email?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Obtener item completo": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Normalizar datos",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Extraer Item ID",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "¿Tiene email?": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Generar hash mailchimp",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Respond to Webhook",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2026-03-18T19:20:16.271Z",
+  "id": "2HfRV90oSXD7w1YO",
+  "isArchived": false,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "name": "Export contacts to Mailchimp",
+  "nodes": [
+    {
+      "id": "65502217-e5e6-4d3b-a608-cef405b84649",
+      "name": "Webhook",
+      "parameters": {
+        "httpMethod": "POST",
+        "options": {},
+        "path": "monday-mailchimp-upsert",
+        "responseMode": "responseNode"
+      },
+      "position": [
+        0,
+        0
+      ],
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "webhookId": "a7f5655e-5df2-4c91-8288-8a725344b489"
+    },
+    {
+      "id": "788f5be1-0b7b-40cb-9c6f-00ebc53a15f0",
+      "name": "Extraer Item ID",
+      "parameters": {
+        "jsCode": "const body = $json.body || $json;\n\nconst itemId =\n  body.itemId ||\n  body.pulseId ||\n  body.event?.itemId ||\n  body.event?.pulseId ||\n  body.inputFields?.itemId ||\n  body.inputFields?.pulseId ||\n  body.item?.id ||\n  \"\";\n\nconst boardId =\n  body.boardId ||\n  body.event?.boardId ||\n  body.inputFields?.boardId ||\n  \"\";\n\nreturn [\n  {\n    json: {\n      itemId: String(itemId),\n      boardId: String(boardId)\n    }\n  }\n];"
+      },
+      "position": [
+        208,
+        0
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "credentials": {
+        "mondayComApi": {
+          "id": "jq04ZaznQx8nOr7b",
+          "name": "Monday.com - Valtmx account"
+        }
+      },
+      "id": "bd7c3681-bb4c-436f-9bbd-b209ea386a66",
+      "name": "Obtener item completo",
+      "parameters": {
+        "itemId": "={{ $json.itemId }}",
+        "operation": "get",
+        "resource": "boardItem"
+      },
+      "position": [
+        416,
+        0
+      ],
+      "type": "n8n-nodes-base.mondayCom",
+      "typeVersion": 1
+    },
+    {
+      "id": "b972f318-4381-48a9-bcb9-8f939b668ec0",
+      "name": "Normalizar datos",
+      "parameters": {
+        "jsCode": "const item = $json;\n\n// Normaliza texto\nfunction normalizeText(str) {\n  return String(str || \"\")\n    .normalize(\"NFD\")\n    .replace(/[\\u0300-\\u036f]/g, \"\")\n    .toLowerCase()\n    .trim();\n}\n\n// Busca columna por type, title o id\nfunction findColumn(cols, { types = [], titleIncludes = [], idIncludes = [] }) {\n  return (cols || []).find((c) => {\n    const type = normalizeText(c.type);\n    const title = normalizeText(c.column?.title);\n    const id = normalizeText(c.id);\n\n    const typeMatch = types.some((t) => type === normalizeText(t));\n    const titleMatch = titleIncludes.some((t) => title.includes(normalizeText(t)));\n    const idMatch = idIncludes.some((t) => id.includes(normalizeText(t)));\n\n    return typeMatch || titleMatch || idMatch;\n  });\n}\n\nfunction parseColumnValue(col) {\n  if (!col || !col.value) return null;\n\n  try {\n    return JSON.parse(col.value);\n  } catch {\n    return col.value;\n  }\n}\n\nconst cols = item.column_values || [];\n\n// EMAIL\nconst emailCol = findColumn(cols, {\n  types: [\"email\"],\n  titleIncludes: [\"email\", \"e-mail\", \"correo\", \"mail\"],\n  idIncludes: [\"email\", \"mail\"]\n});\n\nconst emailParsed = parseColumnValue(emailCol);\n\nlet email = \"\";\nif (emailParsed && typeof emailParsed === \"object\" && emailParsed.email) {\n  email = emailParsed.email;\n} else if (emailCol?.text) {\n  email = emailCol.text;\n}\n\nemail = String(email || \"\").trim().toLowerCase();\n\nconst emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\nif (!emailRegex.test(email)) {\n  email = \"\";\n}\n\n// PHONE\nconst phoneCol = findColumn(cols, {\n  types: [\"phone\"],\n  titleIncludes: [\"telefono\", \"teléfono\", \"tel\", \"phone\", \"whatsapp\", \"celular\", \"movil\", \"móvil\"],\n  idIncludes: [\"phone\", \"telefono\", \"tel\", \"whatsapp\", \"cel\"]\n});\n\nconst phoneParsed = parseColumnValue(phoneCol);\n\nlet phone = \"\";\nif (phoneParsed && typeof phoneParsed === \"object\" && phoneParsed.phone) {\n  phone = phoneParsed.phone;\n} else if (phoneCol?.text) {\n  phone = phoneCol.text;\n}\n\nphone = String(phone || \"\").replace(/[^\\d+]/g, \"\");\n\n// NAME\nconst rawName = String(item.name || \"\").trim();\nconst parts = rawName.split(/\\s+/).filter(Boolean);\n\nconst firstName = parts.shift() || \"\";\nconst lastName = parts.join(\" \");\n\nreturn [\n  {\n    json: {\n      email,\n      phone,\n      firstName,\n      lastName,\n      itemId: String(item.id || \"\")\n    }\n  }\n];"
+      },
+      "position": [
+        624,
+        0
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "ed7e857b-8ec8-4985-b06b-251e3abf373e",
+      "name": "¿Tiene email?",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "83d1be3f-2c94-402e-91ff-d6dfaea9e3a3",
+              "leftValue": "={{ $json.email }}",
+              "operator": {
+                "operation": "notEmpty",
+                "singleValue": true,
+                "type": "string"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          }
+        },
+        "options": {}
+      },
+      "position": [
+        832,
+        0
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3
+    },
+    {
+      "id": "c7314156-a7f0-4923-a0c9-31e21181a998",
+      "name": "Generar hash mailchimp",
+      "parameters": {
+        "jsCode": "function md5(str) {\n  function L(k, d) { return (k << d) | (k >>> (32 - d)); }\n  function K(G, k) {\n    let I, d, F, H, x;\n    F = G & 2147483648;\n    H = k & 2147483648;\n    I = G & 1073741824;\n    d = k & 1073741824;\n    x = (G & 1073741823) + (k & 1073741823);\n    if (I & d) return x ^ 2147483648 ^ F ^ H;\n    if (I | d) {\n      if (x & 1073741824) return x ^ 3221225472 ^ F ^ H;\n      return x ^ 1073741824 ^ F ^ H;\n    }\n    return x ^ F ^ H;\n  }\n  function r(d, F, k) { return (d & F) | (~d & k); }\n  function q(d, F, k) { return (d & k) | (F & ~k); }\n  function p(d, F, k) { return d ^ F ^ k; }\n  function n(d, F, k) { return F ^ (d | ~k); }\n  function u(G, F, aa, Z, k, H, I) { G = K(G, K(K(r(F, aa, Z), k), I)); return K(L(G, H), F); }\n  function f(G, F, aa, Z, k, H, I) { G = K(G, K(K(q(F, aa, Z), k), I)); return K(L(G, H), F); }\n  function D(G, F, aa, Z, k, H, I) { G = K(G, K(K(p(F, aa, Z), k), I)); return K(L(G, H), F); }\n  function t(G, F, aa, Z, k, H, I) { G = K(G, K(K(n(F, aa, Z), k), I)); return K(L(G, H), F); }\n  function E(G) {\n    let Z, k = G.length, x = k + 8, I = (x - (x % 64)) / 64 + 1, aa = new Array(I * 16 - 1);\n    let d = 0, F = 0;\n    while (F < k) {\n      Z = (F - (F % 4)) / 4;\n      d = (F % 4) * 8;\n      aa[Z] = aa[Z] | (G.charCodeAt(F) << d);\n      F++;\n    }\n    Z = (F - (F % 4)) / 4;\n    d = (F % 4) * 8;\n    aa[Z] = aa[Z] | (128 << d);\n    aa[I * 16 - 2] = k << 3;\n    aa[I * 16 - 1] = k >>> 29;\n    return aa;\n  }\n  function B(x) {\n    let k = \"\", F = \"\", d;\n    for (d = 0; d <= 3; d++) {\n      F = (x >>> (d * 8)) & 255;\n      F = \"0\" + F.toString(16);\n      k += F.substr(F.length - 2, 2);\n    }\n    return k;\n  }\n  function J(G) {\n    G = G.replace(/\\r\\n/g, \"\\n\");\n    let d = \"\";\n    for (let F = 0; F < G.length; F++) {\n      let x = G.charCodeAt(F);\n      if (x < 128) d += String.fromCharCode(x);\n      else if (x < 2048) {\n        d += String.fromCharCode((x >> 6) | 192);\n        d += String.fromCharCode((x & 63) | 128);\n      } else {\n        d += String.fromCharCode((x >> 12) | 224);\n        d += String.fromCharCode(((x >> 6) & 63) | 128);\n        d += String.fromCharCode((x & 63) | 128);\n      }\n    }\n    return d;\n  }\n\n  let aa = [], G, F, k, Z, H, I, d, x;\n  str = J(str);\n  aa = E(str);\n  G = 1732584193;\n  F = 4023233417;\n  k = 2562383102;\n  Z = 271733878;\n\n  for (let o = 0; o < aa.length; o += 16) {\n    H = G; I = F; d = k; x = Z;\n    G = u(G, F, k, Z, aa[o + 0], 7, 3614090360);\n    Z = u(Z, G, F, k, aa[o + 1], 12, 3905402710);\n    F = u(F, Z, G, F, aa[o + 2], 17, 606105819);\n    k = u(k, F, Z, G, aa[o + 3], 22, 3250441966);\n    G = u(G, F, k, Z, aa[o + 4], 7, 4118548399);\n    Z = u(Z, G, F, k, aa[o + 5], 12, 1200080426);\n    F = u(F, Z, G, F, aa[o + 6], 17, 2821735955);\n    k = u(k, F, Z, G, aa[o + 7], 22, 4249261313);\n    G = f(G, F, k, Z, aa[o + 8], 7, 1770035416);\n    Z = f(Z, G, F, k, aa[o + 9], 12, 2336552879);\n    F = f(F, Z, G, F, aa[o + 10], 17, 4294925233);\n    k = f(k, F, Z, G, aa[o + 11], 22, 2304563134);\n    G = D(G, F, k, Z, aa[o + 12], 7, 1804603682);\n    Z = D(Z, G, F, k, aa[o + 13], 12, 4254626195);\n    F = D(F, Z, G, F, aa[o + 14], 17, 2792965006);\n    k = D(k, F, Z, G, aa[o + 15], 22, 1236535329);\n    G = t(G, F, k, Z, aa[o + 0], 7, 4129170786);\n    Z = t(Z, G, F, k, aa[o + 7], 12, 3225465664);\n    F = t(F, Z, G, F, aa[o + 14], 17, 643717713);\n    k = t(k, F, Z, G, aa[o + 5], 22, 3921069994);\n    G = t(G, F, k, Z, aa[o + 12], 7, 3593408605);\n    Z = t(Z, G, F, k, aa[o + 3], 12, 38016083);\n    F = t(F, Z, G, F, aa[o + 10], 17, 3634488961);\n    k = t(k, F, Z, G, aa[o + 1], 22, 3889429448);\n    G = t(G, F, k, Z, aa[o + 8], 7, 568446438);\n    Z = t(Z, G, F, k, aa[o + 15], 12, 3275163606);\n    F = t(F, Z, G, F, aa[o + 6], 17, 4107603335);\n    k = t(k, F, Z, G, aa[o + 13], 22, 1163531501);\n    G = K(G, H); F = K(F, I); k = K(k, d); Z = K(Z, x);\n  }\n\n  const email = String($json.email || '').trim().toLowerCase();\n\n  return [\n    {\n      json: {\n        ...$json,\n        subscriberHash: (B(G) + B(F) + B(k) + B(Z)).toLowerCase()\n      }\n    }\n  ];\n}\n\nreturn md5(String($json.email || '').trim().toLowerCase());"
+      },
+      "position": [
+        1120,
+        -128
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "BuXwnH7PzFWf6A83",
+          "name": "Mailchimp APIKey - Armario del caballero"
+        }
+      },
+      "id": "519c2409-68da-4b9a-b35a-e9dff7880746",
+      "maxTries": 5,
+      "name": "Mailchimp UPSERT",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "jsonBody": "={\n  \"email_address\": \"{{ $json.email }}\",\n  \"status_if_new\": \"subscribed\",\n  \"merge_fields\": {\n    \"FNAME\": \"{{ $json.firstName }}\",\n    \"LNAME\": \"{{ $json.lastName }}\",\n    \"PHONE\": \"{{ $json.phone }}\",\n    \"MMERGE5\": \"{{ $json.itemId }}\"\n  }\n}",
+        "method": "PUT",
+        "options": {},
+        "sendBody": true,
+        "sendHeaders": true,
+        "specifyBody": "json",
+        "url": "=https://us4.api.mailchimp.com/3.0/lists/23892773fe/members/{{ $json.subscriberHash }}"
+      },
+      "position": [
+        1360,
+        -128
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "waitBetweenTries": 3000
+    },
+    {
+      "id": "05c1f47f-c225-482d-9cf5-6433679bbf73",
+      "name": "Respond to Webhook",
+      "parameters": {
+        "options": {
+          "responseCode": 200
+        },
+        "respondWith": "json",
+        "responseBody": "={\n  \"ok\": true,\n  \"synced\": true,\n  \"itemId\": \"={{ $json.itemId }}\"\n}"
+      },
+      "position": [
+        1664,
+        16
+      ],
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5
+    }
+  ],
+  "pinData": {},
+  "settings": {
+    "availableInMCP": false,
+    "binaryMode": "separate",
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionOrder": "v1",
+    "timeSavedMode": "fixed",
+    "timezone": "America/Mexico_City"
+  },
+  "shared": [
+    {
+      "createdAt": "2026-03-18T19:20:16.277Z",
+      "projectId": "K3qTwdhfsN7M0hmd",
+      "role": "workflow:owner",
+      "updatedAt": "2026-03-18T19:20:16.277Z",
+      "workflowId": "2HfRV90oSXD7w1YO"
+    }
+  ],
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2026-03-18T20:34:09.211Z",
+  "versionId": "aef4e7dc-3d37-43de-bdfb-761a071e0367"
+}
