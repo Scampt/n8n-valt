@@ -1,0 +1,49 @@
+{
+  "active": false,
+  "activeVersion": null,
+  "activeVersionId": null,
+  "connections": {},
+  "createdAt": "2026-03-21T00:18:47.713Z",
+  "id": "p9GZoGgTERVy4663",
+  "isArchived": false,
+  "meta": null,
+  "name": "PDFs Mailchimp Email Campaing",
+  "nodes": [
+    {
+      "id": "e3b16deb-9793-4fa3-9f05-53bf1a216f55",
+      "name": "Stripe Trigger",
+      "parameters": {
+        "events": [
+          "charge.succeeded"
+        ]
+      },
+      "position": [
+        0,
+        0
+      ],
+      "type": "n8n-nodes-base.stripeTrigger",
+      "typeVersion": 1,
+      "webhookId": "f6ea8001-17cd-4999-a17a-6ff383a6ccc4"
+    }
+  ],
+  "pinData": {},
+  "settings": {
+    "availableInMCP": false,
+    "binaryMode": "separate",
+    "executionOrder": "v1"
+  },
+  "shared": [
+    {
+      "createdAt": "2026-03-21T00:18:47.718Z",
+      "projectId": "K3qTwdhfsN7M0hmd",
+      "role": "workflow:owner",
+      "updatedAt": "2026-03-21T00:18:47.718Z",
+      "workflowId": "p9GZoGgTERVy4663"
+    }
+  ],
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2026-03-21T00:19:50.876Z",
+  "versionId": "261d6abc-9e4f-4bc3-8e7e-a142fd1876e7"
+}
