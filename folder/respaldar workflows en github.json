@@ -178,6 +178,7 @@
     "createdAt": "2026-02-26T18:09:44.551Z",
     "description": "",
     "name": "Version f993f568",
+    "nodeGroups": [],
     "nodes": [
       {
         "id": "e58c3ba7-f561-404c-be74-a22f8f07168a",
