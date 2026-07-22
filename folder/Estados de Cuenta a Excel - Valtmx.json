@@ -323,6 +323,7 @@
   "isArchived": false,
   "meta": null,
   "name": "Estados de Cuenta a Excel - Valtmx",
+  "nodeGroups": [],
   "nodes": [
     {
       "id": "e8fa1965-6b59-44de-bf22-674ce9aada28",
