@@ -360,6 +360,7 @@
     "templateCredsSetupCompleted": true
   },
   "name": "Export contacts to Mailchimp",
+  "nodeGroups": [],
   "nodes": [
     {
       "id": "65502217-e5e6-4d3b-a608-cef405b84649",
