@@ -257,6 +257,7 @@
     "templateCredsSetupCompleted": true
   },
   "name": "Prueba de estados de cuenta INVEX",
+  "nodeGroups": [],
   "nodes": [
     {
       "credentials": {
