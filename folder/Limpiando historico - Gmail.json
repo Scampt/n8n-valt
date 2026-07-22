@@ -198,6 +198,7 @@
     "templateCredsSetupCompleted": true
   },
   "name": "Limpiando historico - Gmail",
+  "nodeGroups": [],
   "nodes": [
     {
       "id": "2f7d2a3d-7464-4879-b869-ed1c49559e7d",
