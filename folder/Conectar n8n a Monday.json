@@ -7,9 +7,9 @@
       "main": [
         [
           {
+            "index": 0,
             "node": "Respond to Webhook",
-            "type": "main",
-            "index": 0
+            "type": "main"
           }
         ]
       ]
@@ -18,9 +18,9 @@
       "main": [
         [
           {
+            "index": 0,
             "node": "If",
-            "type": "main",
-            "index": 0
+            "type": "main"
           }
         ]
       ]
@@ -31,71 +31,72 @@
   "isArchived": false,
   "meta": null,
   "name": "Conectar n8n a Monday",
+  "nodeGroups": [],
   "nodes": [
     {
+      "id": "0142ceae-3586-4c77-a80a-b7eea8ce202d",
+      "name": "If",
       "parameters": {
         "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "be53ddff-95c1-4f7e-a976-c3cc9cee1ea3",
+              "leftValue": "={{ $json.body.challenge }}",
+              "operator": {
+                "operation": "exists",
+                "singleValue": true,
+                "type": "string"
+              },
+              "rightValue": ""
+            }
+          ],
           "options": {
             "caseSensitive": true,
             "leftValue": "",
             "typeValidation": "strict",
             "version": 2
-          },
-          "conditions": [
-            {
-              "id": "be53ddff-95c1-4f7e-a976-c3cc9cee1ea3",
-              "leftValue": "={{ $json.body.challenge }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "exists",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
+          }
         },
         "options": {}
       },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
       "position": [
         80,
         -64
       ],
-      "id": "0142ceae-3586-4c77-a80a-b7eea8ce202d",
-      "name": "If"
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2
     },
     {
+      "id": "48a6a392-93ee-4ba2-8644-40e8e5348aad",
+      "name": "Respond to Webhook",
       "parameters": {
+        "options": {},
         "respondWith": "json",
-        "responseBody": "={\n  \"challenge\": \"{{ $json.body.challenge }}\"\n} ",
-        "options": {}
+        "responseBody": "={\n  \"challenge\": \"{{ $json.body.challenge }}\"\n} "
       },
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.4,
       "position": [
         400,
         -144
       ],
-      "id": "48a6a392-93ee-4ba2-8644-40e8e5348aad",
-      "name": "Respond to Webhook"
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4
     },
     {
+      "id": "1876eefe-871b-45b7-b4ec-a3ec774884c2",
+      "name": "Webhook",
       "parameters": {
         "httpMethod": "POST",
+        "options": {},
         "path": "monday-mailchimp-upsert",
-        "responseMode": "lastNode",
-        "options": {}
+        "responseMode": "lastNode"
       },
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2.1,
       "position": [
         -144,
         -64
       ],
-      "id": "1876eefe-871b-45b7-b4ec-a3ec774884c2",
-      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
       "webhookId": "ec0421b7-7ba3-4e6e-93dd-bce69fd97e2f"
     }
   ],
@@ -105,11 +106,11 @@
   },
   "shared": [
     {
-      "updatedAt": "2025-12-15T18:18:34.678Z",
       "createdAt": "2025-12-15T18:18:34.678Z",
+      "projectId": "K3qTwdhfsN7M0hmd",
       "role": "workflow:owner",
-      "workflowId": "XI2RxFpJGeazIhgz",
-      "projectId": "K3qTwdhfsN7M0hmd"
+      "updatedAt": "2025-12-15T18:18:34.678Z",
+      "workflowId": "XI2RxFpJGeazIhgz"
     }
   ],
   "staticData": null,
