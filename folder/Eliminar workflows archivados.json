@@ -3,24 +3,13 @@
   "activeVersion": null,
   "activeVersionId": null,
   "connections": {
-    "When clicking ‘Execute workflow’": {
+    "Borrar Workflows archivados": {
       "main": [
         [
           {
-            "node": "Obtener todos los workflows",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Obtener todos los workflows": {
-      "main": [
-        [
-          {
-            "node": "Filtrar archivados",
-            "type": "main",
-            "index": 0
+            "index": 0,
+            "node": "Resumen",
+            "type": "main"
           }
         ]
       ]
@@ -29,20 +18,31 @@
       "main": [
         [
           {
+            "index": 0,
             "node": "Borrar Workflows archivados",
-            "type": "main",
-            "index": 0
+            "type": "main"
           }
         ]
       ]
     },
-    "Borrar Workflows archivados": {
+    "Obtener todos los workflows": {
       "main": [
         [
           {
-            "node": "Resumen",
-            "type": "main",
-            "index": 0
+            "index": 0,
+            "node": "Filtrar archivados",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Obtener todos los workflows",
+            "type": "main"
           }
         ]
       ]
@@ -53,92 +53,93 @@
   "isArchived": false,
   "meta": null,
   "name": "Eliminar workflows archivados",
+  "nodeGroups": [],
   "nodes": [
     {
+      "id": "45a5f14b-a975-40cd-8284-31fa63074f9b",
+      "name": "When clicking ‘Execute workflow’",
       "parameters": {},
-      "type": "n8n-nodes-base.manualTrigger",
-      "typeVersion": 1,
       "position": [
         16,
         -48
       ],
-      "id": "45a5f14b-a975-40cd-8284-31fa63074f9b",
-      "name": "When clicking ‘Execute workflow’"
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1
     },
     {
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ZqPO2RxBc40cswQO",
+          "name": "n8n APIKey - Valtmx"
+        }
+      },
+      "id": "6b183139-7332-493f-b04a-edd9d8dfd2d8",
+      "name": "Obtener todos los workflows",
+      "notes": "Agregar api key de n8n como Header Auth",
+      "notesInFlow": true,
+      "onError": "continueRegularOutput",
       "parameters": {
-        "url": "=https://valtmx-n8n.z5cvat.easypanel.host/api/v1/workflows",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
-        "options": {}
+        "options": {},
+        "url": "=https://valtmx-n8n.z5cvat.easypanel.host/api/v1/workflows"
       },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
       "position": [
         272,
         -48
       ],
-      "id": "6b183139-7332-493f-b04a-edd9d8dfd2d8",
-      "name": "Obtener todos los workflows",
-      "notesInFlow": true,
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "ZqPO2RxBc40cswQO",
-          "name": "n8n APIKey - Valtmx"
-        }
-      },
-      "onError": "continueRegularOutput",
-      "notes": "Agregar api key de n8n como Header Auth"
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2
     },
     {
+      "id": "d8113330-b8ae-45ae-9e45-377c4274853e",
+      "name": "Filtrar archivados",
       "parameters": {
         "jsCode": "// Detecta si la respuesta viene como array o con propiedad data\nconst all = Array.isArray($json) ? $json : $json.data || [];\n\n// En tu versión, el campo correcto es isArchived\nconst archivados = all.filter(w => w.isArchived === true);\n\nif (archivados.length === 0) {\n  return [{ json: { mensaje: \"No hay workflows archivados (isArchived=true) para eliminar.\" } }];\n}\n\n// Devuelve solo los archivados para eliminarlos\nreturn archivados.map(a => ({\n  json: {\n    id: a.id,\n    name: a.name,\n    isArchived: a.isArchived,\n    active: a.active\n  }\n}));\n"
       },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
       "position": [
         480,
         -48
       ],
-      "id": "d8113330-b8ae-45ae-9e45-377c4274853e",
-      "name": "Filtrar archivados"
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
     },
     {
+      "id": "46fae30e-5d34-495a-8444-8687bb69447e",
+      "name": "Resumen",
       "parameters": {
         "jsCode": "const total = $items().length;\nreturn [{ json: { totalEliminados: total, mensaje: `Se eliminaron ${total} workflows archivados de n8n.` } }];\n"
       },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
       "position": [
         912,
         -48
       ],
-      "id": "46fae30e-5d34-495a-8444-8687bb69447e",
-      "name": "Resumen"
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
     },
     {
-      "parameters": {
-        "method": "DELETE",
-        "url": "=https://valtmx-n8n.z5cvat.easypanel.host/api/v1/workflows/{{$json.id}}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        704,
-        -48
-      ],
-      "id": "0ad31975-e286-4d67-a9c3-3d8c1b9a75ee",
-      "name": "Borrar Workflows archivados",
       "credentials": {
         "httpHeaderAuth": {
           "id": "ZqPO2RxBc40cswQO",
           "name": "n8n APIKey - Valtmx"
         }
       },
-      "onError": "continueRegularOutput"
+      "id": "0ad31975-e286-4d67-a9c3-3d8c1b9a75ee",
+      "name": "Borrar Workflows archivados",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "method": "DELETE",
+        "options": {},
+        "url": "=https://valtmx-n8n.z5cvat.easypanel.host/api/v1/workflows/{{$json.id}}"
+      },
+      "position": [
+        704,
+        -48
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2
     }
   ],
   "pinData": {},
@@ -147,11 +148,11 @@
   },
   "shared": [
     {
-      "updatedAt": "2025-12-15T19:21:49.644Z",
       "createdAt": "2025-12-15T19:21:49.644Z",
+      "projectId": "K3qTwdhfsN7M0hmd",
       "role": "workflow:owner",
-      "workflowId": "oTuPGPObe638hQIf",
-      "projectId": "K3qTwdhfsN7M0hmd"
+      "updatedAt": "2025-12-15T19:21:49.644Z",
+      "workflowId": "oTuPGPObe638hQIf"
     }
   ],
   "staticData": null,
