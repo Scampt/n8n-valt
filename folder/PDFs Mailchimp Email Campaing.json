@@ -8,6 +8,7 @@
   "isArchived": false,
   "meta": null,
   "name": "PDFs Mailchimp Email Campaing",
+  "nodeGroups": [],
   "nodes": [
     {
       "id": "e3b16deb-9793-4fa3-9f05-53bf1a216f55",
