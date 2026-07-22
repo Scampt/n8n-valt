@@ -376,6 +376,7 @@
     "templateCredsSetupCompleted": true
   },
   "name": "Scrapping Win Leads - Hotmart to Monday",
+  "nodeGroups": [],
   "nodes": [
     {
       "credentials": {
