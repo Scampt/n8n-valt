@@ -22,6 +22,7 @@
     "templateCredsSetupCompleted": true
   },
   "name": "My workflow",
+  "nodeGroups": [],
   "nodes": [
     {
       "id": "1f6b6ba8-658d-45d4-bc2d-efa28ddae3a4",
