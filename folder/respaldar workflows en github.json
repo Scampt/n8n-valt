@@ -757,6 +757,7 @@
     "templateCredsSetupCompleted": true
   },
   "name": "respaldar workflows en github",
+  "nodeGroups": [],
   "nodes": [
     {
       "id": "e58c3ba7-f561-404c-be74-a22f8f07168a",
@@ -1166,7 +1167,12 @@
   ],
   "staticData": {
     "node:Schedule Trigger": {
-      "recurrenceRules": []
+      "recurrenceRuleSignatures": [
+        null
+      ],
+      "recurrenceRules": [
+        null
+      ]
     }
   },
   "tags": [],
