@@ -163,6 +163,7 @@
     "templateCredsSetupCompleted": true
   },
   "name": "Manual Backfill Export Monday - Mailchimp",
+  "nodeGroups": [],
   "nodes": [
     {
       "id": "9dc2b993-91df-47dd-8c77-9f85013f302b",
